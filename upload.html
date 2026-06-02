@@ -191,7 +191,7 @@
     for (let r = range.s.r + 1; r <= range.e.r; r++) {
       const rowDateStr = parseCellDate(ws, r, colDate)
       if (!rowDateStr) continue
-      if (rowDateStr <= todayStr) continue  // ข้ามวันนี้และวันที่ผ่านมาแล้ว
+      if (rowDateStr < todayStr) continue  // ข้ามเฉพาะวันที่ผ่านมาแล้ว
 
       const customer = getVal(r, colCustomer) ? String(getVal(r, colCustomer)).trim() : null
       if (!customer) continue
