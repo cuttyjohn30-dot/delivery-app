@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบส่งของ</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #333; }
+  .header { background: #1a56db; padding: 14px 16px; color: white; font-weight: bold; font-size: 16px; position: sticky; top: 0; z-index: 100; }
+  .page { display: none; max-width: 480px; margin: 0 auto; padding: 16px; }
+  .page.active { display: block; }
+  .card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  .section-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; color: #1e3a8a; }
+  .driver-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+  .driver-btn { background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 10px; padding: 16px 10px; text-align: center; cursor: pointer; transition: all .2s; }
+  .driver-btn:hover, .driver-btn:active { border-color: #1a56db; background: #eff6ff; }
+  .driver-btn .icon { font-size: 28px; }
+  .driver-btn .name { font-weight: bold; margin-top: 6px; font-size: 15px; }
+  .driver-btn .code { font-size: 11px; color: #888; margin-top: 2px; }
+  .driver-header { display: flex; align-items: center; gap: 12px; }
+  .driver-avatar { width: 46px; height: 46px; background: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; flex-shrink: 0; }
+  .back-btn { background: none; border: none; color: #1a56db; cursor: pointer; font-size: 14px; padding: 0 0 12px 0; display: flex; align-items: center; gap: 4px; }
+  .progress-bar { background: #e5e7eb; border-radius: 10px; height: 8px; margin-top: 8px; }
+  .progress-fill { background: #1a56db; height: 8px; border-radius: 10px; transition: width .5s; }
+  .delivery-item { border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; background: white; }
+  .delivery-item.done { background: #f0fdf4; border-color: #86efac; }
+  .delivery-customer { font-weight: bold; font-size: 15px; }
+  .delivery-meta { font-size: 12px; color: #666; margin-top: 3px; }
+  .delivery-price { font-size: 13px; color: #1a56db; margin-top: 3px; font-weight: bold; }
+  .delivery-added { font-size: 11px; color: #f59e0b; margin-top: 2px; }
+  .done-time { font-size: 11px; color: #16a34a; margin-top: 3px; }
+  .btn-confirm { background: #1a56db; color: white; border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; font-size: 13px; font-weight: bold; white-space: nowrap; }
+  .btn-confirm:active { opacity: .8; }
+  .btn-add { width: 100%; background: #1a56db; color: white; border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: bold; cursor: pointer; margin-bottom: 80px; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 199; }
+  .modal { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 20px 20px 0 0; padding: 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.15); z-index: 200; max-width: 480px; margin: 0 auto; }
+  .modal-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 16px; }
+  .modal-title { font-weight: bold; font-size: 16px; text-align: center; margin-bottom: 16px; }
+  label { font-size: 13px; color: #555; display: block; margin-bottom: 4px; }
+  input, select { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; margin-bottom: 12px; background: white; }
+  input:focus, select:focus { outline: none; border-color: #1a56db; }
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn-cancel { padding: 12px; border: 1px solid #d1d5db; background: white; border-radius: 8px; font-size: 14px; cursor: pointer; }
+  .btn-submit { padding: 12px; background: #1a56db; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
+  .empty-state { text-align: center; color: #888; padding: 40px 20px; }
+  .loading { text-align: center; color: #888; padding: 30px; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #16a34a; color: white; padding: 10px 20px; border-radius: 20px; font-size: 14px; z-index: 300; display: none; }
+  .section-header { display: flex; align-items: center; gap: 8px; margin: 12px 0 8px; }
+  .section-line { flex: 1; height: 1px; background: #e5e7eb; }
+  .section-badge { font-size: 11px; padding: 3px 10px; border-radius: 10px; font-weight: bold; white-space: nowrap; }
+  .badge-today { background: #dbeafe; color: #1e40af; }
+  .badge-carry { background: #fef3c7; color: #92400e; }
+  .delivery-item.carry { border-left: 3px solid #f59e0b; background: #fffbeb; }
+  .delivery-item.carry.done { background: #f0fdf4; border-color: #86efac; border-left: 3px solid #86efac; }
+  .delivery-date { font-size: 11px; color: #f59e0b; margin-top: 2px; }
+  .arrive-time { font-size: 11px; color: #7c3aed; margin-top: 2px; }
+  .notes-text { font-size: 12px; color: #555; margin-top: 3px; background: #f8f9fa; padding: 4px 8px; border-radius: 6px; }
+  .delivery-item.arrived { background: #faf5ff; border-color: #c4b5fd; }
+  .btn-arrive { background: #7c3aed; color: white; border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; font-size: 13px; font-weight: bold; white-space: nowrap; }
+  .btn-done { background: #16a34a; color: white; border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; font-size: 13px; font-weight: bold; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div class="header">🚚 ระบบส่งของ</div>
+
+<!-- หน้าเลือกชื่อ -->
+<div class="page active" id="page-select">
+  <div class="card" style="margin-top:8px;">
+    <div class="section-title">เลือกชื่อของคุณ</div>
+    <div style="font-size:13px; color:#888;" id="today-label"></div>
+    <div class="driver-grid" id="driver-grid">
+      <div class="loading">กำลังโหลด...</div>
+    </div>
+  </div>
+</div>
+
+<!-- หน้ารายการงาน -->
+<div class="page" id="page-list">
+  <div style="margin-top:8px;">
+    <button class="back-btn" onclick="goBack()">← กลับ</button>
+    <div class="card">
+      <div class="driver-header">
+        <div class="driver-avatar" id="avatar-letter">B</div>
+        <div>
+          <div style="font-weight:bold; font-size:16px;" id="driver-label"></div>
+          <div style="font-size:12px; color:#888;" id="date-label"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span style="font-weight:bold; font-size:14px;">รายการงานวันนี้</span>
+        <span style="font-size:12px; color:#888;" id="progress-text">0/0</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+    <div id="delivery-list"></div>
+    <button class="btn-add" onclick="openAddModal()">+ เพิ่มงานส่งเพิ่มเติม</button>
+  </div>
+</div>
+
+<!-- Modal เพิ่มงาน -->
+<div class="modal-overlay" id="overlay" onclick="closeAddModal()"></div>
+<div class="modal" id="add-modal">
+  <div class="modal-handle"></div>
+  <div class="modal-title">เพิ่มงานส่งเพิ่มเติม</div>
+  <label>ชื่อลูกค้า *</label>
+  <input id="add-customer" type="text" placeholder="เช่น Skanem, Komark" />
+  <label>ประเภทงาน</label>
+  <select id="add-type">
+    <option>ส่งของ</option>
+    <option>รับของ</option>
+    <option>ส่งของ+รับของ</option>
+    <option>ทิ้งของ</option>
+    <option>เก็บเงิน</option>
+  </select>
+  <label>ราคา (ถ้ามี)</label>
+  <input id="add-price" type="number" placeholder="เช่น 9500" />
+  <div class="btn-row">
+    <button class="btn-cancel" onclick="closeAddModal()">ยกเลิก</button>
+    <button class="btn-submit" onclick="addDelivery()">เพิ่มรายการ</button>
+  </div>
+</div>
+
+<!-- Modal บันทึกส่งแล้ว + หมายเหตุ -->
+<div class="modal-overlay" id="done-overlay" onclick="closeDoneModal()"></div>
+<div class="modal" id="done-modal">
+  <div class="modal-handle"></div>
+  <div class="modal-title">✅ บันทึกการส่งของ</div>
+  <label>หมายเหตุ (ถ้ามี)</label>
+  <input id="notes-input" type="text" placeholder="เช่น รอ Forklift, ลูกค้าไม่อยู่, เซ็นรับของแล้ว" />
+  <div class="btn-row">
+    <button class="btn-cancel" onclick="closeDoneModal()">ยกเลิก</button>
+    <button class="btn-submit" onclick="confirmDelivery()">บันทึก ✅</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+
+  let currentDriver = null
+  let currentDriverName = null
+  let todayStr = new Date().toISOString().split('T')[0]
+
+  const DRIVERS = [
+    { name: 'kia',  code: 'Transport', icon: '🧑' },
+    { name: 'Den',  code: 'Transport', icon: '👨' },
+    { name: 'Bom',  code: 'Transport', icon: '🧑' },
+  ]
+
+  function init() {
+    const d = new Date()
+    document.getElementById('today-label').textContent =
+      'วันที่ ' + d.toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric', weekday:'long' })
+
+    document.getElementById('driver-grid').innerHTML = DRIVERS.map(dr => `
+      <div class="driver-btn" onclick="selectDriver('${dr.name}','${dr.code}')">
+        <div class="icon">${dr.icon}</div>
+        <div class="name">${dr.name}</div>
+        <div class="code">รถ ${dr.code}</div>
+      </div>
+    `).join('')
+  }
+
+  async function selectDriver(name, code) {
+    currentDriver = name
+    currentDriverName = name
+    document.getElementById('avatar-letter').textContent = name[0]
+    document.getElementById('driver-label').textContent = name + ' (รถ ' + code + ')'
+    document.getElementById('date-label').textContent =
+      new Date().toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' })
+
+    showPage('page-list')
+    await loadDeliveries()
+  }
+
+  async function loadDeliveries() {
+    document.getElementById('delivery-list').innerHTML = '<div class="loading">กำลังโหลด...</div>'
+
+    // ดึงงานวันนี้ + งานค้าง (pending จากวันก่อน) ของคนขับนี้หรือไม่ระบุคนขับ
+    const { data, error } = await db
+      .from('deliveries')
+      .select('*')
+      .or(`driver_name.eq.${currentDriver},driver_name.is.null`)
+      .or('status.eq.pending,status.eq.done')
+      .lte('date', todayStr)
+      .order('date')
+      .order('id')
+
+    if (error) {
+      document.getElementById('delivery-list').innerHTML = '<div class="empty-state">เกิดข้อผิดพลาด: ' + error.message + '</div>'
+      return
+    }
+
+    const today  = data.filter(d => d.date === todayStr)
+    const carry  = data.filter(d => d.date < todayStr && d.status === 'pending')
+
+    renderList(today, carry)
+  }
+
+  function renderList(today, carry) {
+    const totalDone = today.filter(d => d.status === 'done').length
+    const total = today.length + carry.length
+    const done  = totalDone
+    document.getElementById('progress-text').textContent = done + '/' + total + ' เสร็จ'
+    document.getElementById('progress-fill').style.width = total ? (done/total*100) + '%' : '0%'
+
+    const makeItem = (d, isCarry) => {
+      const carryDate = isCarry ? `<div class="delivery-date">📌 ค้างจาก ${formatDate(d.date)}</div>` : ''
+      const arrivedInfo = d.arrived_at ? `<div class="arrive-time">📍 ถึงแล้ว ${formatTime(d.arrived_at)}</div>` : ''
+      const notesInfo = d.notes ? `<div class="notes-text">💬 ${d.notes}</div>` : ''
+
+      let actionBtn = ''
+      if (d.status === 'done') {
+        actionBtn = '<span style="font-size:22px;">✅</span>'
+      } else if (d.arrived_at) {
+        actionBtn = `<button class="btn-confirm btn-done" onclick="openDoneModal(${d.id})">ส่งแล้ว ✅</button>`
+      } else {
+        actionBtn = `<button class="btn-confirm btn-arrive" onclick="arriveDelivery(${d.id})">ถึงแล้ว 📍</button>`
+      }
+
+      return `
+        <div class="delivery-item ${d.status==='done' ? 'done' : d.arrived_at ? 'arrived' : ''} ${isCarry && d.status!=='done' ? 'carry' : ''}" id="row-${d.id}">
+          <div style="flex:1;">
+            <div class="delivery-customer">${d.customer}</div>
+            <div class="delivery-meta">${d.job_type || '-'}</div>
+            ${d.price ? `<div class="delivery-price">฿${Number(d.price).toLocaleString()}</div>` : ''}
+            ${d.added_by === 'driver' ? '<div class="delivery-added">⚡ เพิ่มเอง</div>' : ''}
+            ${carryDate}
+            ${arrivedInfo}
+            ${notesInfo}
+            ${d.status === 'done' ? `<div class="done-time">✅ ส่งแล้ว ${formatTime(d.done_at)}</div>` : ''}
+          </div>
+          ${actionBtn}
+        </div>`
+    }
+
+    let html = ''
+
+    // ส่วนวันนี้
+    html += `<div class="section-header">
+      <div class="section-line"></div>
+      <span class="section-badge badge-today">📅 วันนี้</span>
+      <div class="section-line"></div>
+    </div>`
+    html += today.length
+      ? today.map(d => makeItem(d, false)).join('')
+      : '<div class="empty-state" style="padding:16px;">ไม่มีงานวันนี้ 🎉</div>'
+
+    // ส่วนงานค้าง
+    if (carry.length > 0) {
+      html += `<div class="section-header" style="margin-top:8px;">
+        <div class="section-line"></div>
+        <span class="section-badge badge-carry">⏰ งานค้าง (${carry.length})</span>
+        <div class="section-line"></div>
+      </div>`
+      html += carry.map(d => makeItem(d, true)).join('')
+    }
+
+    document.getElementById('delivery-list').innerHTML = html
+  }
+
+  async function arriveDelivery(id) {
+    const btn = document.querySelector(`#row-${id} .btn-arrive`)
+    if (btn) { btn.disabled = true; btn.textContent = '...' }
+    const now = new Date().toISOString()
+    const { error } = await db
+      .from('deliveries')
+      .update({ arrived_at: now, driver_name: currentDriver })
+      .eq('id', id)
+    if (error) { showToast('เกิดข้อผิดพลาด', '#ef4444'); return }
+    showToast('📍 บันทึกเวลาถึงแล้ว')
+    await loadDeliveries()
+  }
+
+  let pendingDoneId = null
+  function openDoneModal(id) {
+    pendingDoneId = id
+    document.getElementById('notes-input').value = ''
+    document.getElementById('done-modal').style.display = 'block'
+    document.getElementById('done-overlay').style.display = 'block'
+    setTimeout(() => document.getElementById('notes-input').focus(), 100)
+  }
+
+  function closeDoneModal() {
+    document.getElementById('done-modal').style.display = 'none'
+    document.getElementById('done-overlay').style.display = 'none'
+    pendingDoneId = null
+  }
+
+  async function confirmDelivery(skipNotes) {
+    const id = pendingDoneId
+    if (!id) return
+    const notes = document.getElementById('notes-input').value.trim()
+    closeDoneModal()
+    const now = new Date().toISOString()
+    const { error } = await db
+      .from('deliveries')
+      .update({ status: 'done', done_at: now, driver_name: currentDriver, notes: notes || null })
+      .eq('id', id)
+    if (error) { showToast('เกิดข้อผิดพลาด', '#ef4444'); return }
+    showToast('✅ บันทึกแล้ว')
+    await loadDeliveries()
+  }
+
+  async function addDelivery() {
+    const customer = document.getElementById('add-customer').value.trim()
+    if (!customer) {
+      document.getElementById('add-customer').style.borderColor = '#ef4444'
+      document.getElementById('add-customer').focus()
+      return
+    }
+
+    const type = document.getElementById('add-type').value
+    const price = document.getElementById('add-price').value || null
+
+    const { error } = await db.from('deliveries').insert({
+      date: todayStr,
+      customer,
+      driver: 'BU',
+      driver_name: currentDriver,
+      job_type: type,
+      price: price ? Number(price) : null,
+      status: 'pending',
+      added_by: 'driver'
+    })
+
+    if (error) { showToast('เกิดข้อผิดพลาด', '#ef4444'); return }
+
+    closeAddModal()
+    showToast('✅ เพิ่มรายการแล้ว')
+    await loadDeliveries()
+  }
+
+  function openAddModal() {
+    document.getElementById('add-customer').value = ''
+    document.getElementById('add-price').value = ''
+    document.getElementById('add-customer').style.borderColor = '#d1d5db'
+    document.getElementById('add-modal').style.display = 'block'
+    document.getElementById('overlay').style.display = 'block'
+    setTimeout(() => document.getElementById('add-customer').focus(), 100)
+  }
+
+  function closeAddModal() {
+    document.getElementById('add-modal').style.display = 'none'
+    document.getElementById('overlay').style.display = 'none'
+  }
+
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+    document.getElementById(id).classList.add('active')
+  }
+
+  function goBack() { showPage('page-select') }
+
+  function formatTime(iso) {
+    if (!iso) return ''
+    return new Date(iso).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.'
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return ''
+    const d = new Date(dateStr)
+    return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })
+  }
+
+  function showToast(msg, color = '#16a34a') {
+    const t = document.getElementById('toast')
+    t.textContent = msg
+    t.style.background = color
+    t.style.display = 'block'
+    setTimeout(() => t.style.display = 'none', 2500)
+  }
+
+  init()
+</script>
+</body>
+</html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>อัพโหลด Excel - ระบบส่งของ</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="config.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #333; }
+  .header { background: #1a56db; padding: 14px 20px; color: white; font-weight: bold; font-size: 16px; }
+  .nav-links { padding: 10px 20px; background: white; border-bottom: 1px solid #e5e7eb; display: flex; gap: 12px; }
+  .nav-links a { color: #1a56db; text-decoration: none; font-size: 13px; }
+  .content { max-width: 700px; margin: 0 auto; padding: 20px; }
+  .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  .card-title { font-weight: bold; font-size: 15px; margin-bottom: 14px; color: #1e3a8a; }
+  .upload-zone { border: 2px dashed #93c5fd; border-radius: 12px; padding: 50px 20px; text-align: center; background: #eff6ff; cursor: pointer; transition: all .2s; }
+  .upload-zone:hover, .upload-zone.drag { border-color: #1a56db; background: #dbeafe; }
+  .upload-icon { font-size: 52px; margin-bottom: 10px; }
+  .upload-text { color: #1a56db; font-weight: bold; font-size: 16px; }
+  .upload-sub { color: #888; font-size: 13px; margin-top: 6px; }
+  #file-input { display: none; }
+  .sheet-select { margin-top: 14px; }
+  label { font-size: 13px; color: #555; display: block; margin-bottom: 4px; }
+  select { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; background: white; }
+  .preview-wrap { overflow-x: auto; margin-top: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: #f0f2f5; padding: 8px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; }
+  td { padding: 8px 10px; border-bottom: 1px solid #f5f5f5; }
+  tr:hover td { background: #fafafa; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+  .badge-bu { background: #dbeafe; color: #1e40af; }
+  .badge-kp { background: #dcfce7; color: #166534; }
+  .badge-bd { background: #fef9c3; color: #854d0e; }
+  .badge-sl { background: #fce7f3; color: #9d174d; }
+  .badge-ta { background: #f3e8ff; color: #6b21a8; }
+  .btn-upload { width: 100%; padding: 14px; background: #16a34a; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 4px; }
+  .btn-upload:disabled { background: #9ca3af; cursor: not-allowed; }
+  .btn-upload:not(:disabled):hover { background: #15803d; }
+  .progress-wrap { margin-top: 12px; display: none; }
+  .progress-bar { background: #e5e7eb; border-radius: 10px; height: 10px; }
+  .progress-fill { background: #16a34a; height: 10px; border-radius: 10px; transition: width .3s; }
+  .progress-text { font-size: 13px; color: #555; margin-top: 6px; text-align: center; }
+  .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-top: 12px; }
+  .alert-success { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+  .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+  .summary-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
+  .summary-item { font-size: 13px; color: #555; }
+  .summary-item b { color: #1a56db; }
+</style>
+</head>
+<body>
+
+<div class="header">📤 อัพโหลดตารางจัดรถ</div>
+
+<div class="nav-links">
+  <a href="index.html">📱 หน้าคนขับ</a>
+  <a href="dashboard.html">📊 Dashboard</a>
+</div>
+
+<div class="content">
+
+  <div class="card">
+    <div class="card-title">เลือกไฟล์ Excel</div>
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+      <div class="upload-icon">📁</div>
+      <div class="upload-text">คลิกหรือลากไฟล์มาวางที่นี่</div>
+      <div class="upload-sub">ตารางจัดรถ.xlsx</div>
+    </div>
+    <input type="file" id="file-input" accept=".xlsx,.xls" onchange="handleFile(this.files[0])">
+
+    <div id="sheet-select-wrap" class="sheet-select" style="display:none;">
+      <label>เลือก Sheet (ปีที่ต้องการ)</label>
+      <select id="sheet-select" onchange="previewSheet()"></select>
+    </div>
+  </div>
+
+  <div class="card" id="preview-card" style="display:none;">
+    <div class="card-title">ตัวอย่างข้อมูลที่จะนำเข้า</div>
+    <div class="summary-row" id="summary-row"></div>
+    <div class="preview-wrap">
+      <table id="preview-table">
+        <thead><tr id="preview-head"></tr></thead>
+        <tbody id="preview-body"></tbody>
+      </table>
+    </div>
+
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      <div class="progress-text" id="progress-text">กำลังนำเข้า...</div>
+    </div>
+
+    <div id="alert-box"></div>
+
+    <button class="btn-upload" id="btn-upload" onclick="uploadData()" style="margin-top:16px;" disabled>
+      ⬆️ นำเข้าข้อมูลวันนี้ (<span id="btn-count">0</span> รายการ)
+    </button>
+  </div>
+
+</div>
+
+<script>
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+  const todayStr = new Date().toISOString().split('T')[0]
+
+  let workbook = null
+  let parsedRows = []
+
+  // Drag & drop
+  const zone = document.getElementById('upload-zone')
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag') })
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag'))
+  zone.addEventListener('drop', e => {
+    e.preventDefault()
+    zone.classList.remove('drag')
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0])
+  })
+
+  function handleFile(file) {
+    if (!file) return
+    zone.querySelector('.upload-text').textContent = '📄 ' + file.name
+    const reader = new FileReader()
+    reader.onload = e => {
+      workbook = XLSX.read(e.target.result, { type: 'array', cellDates: true })
+      const sel = document.getElementById('sheet-select')
+      sel.innerHTML = workbook.SheetNames.map(n => `<option value="${n}">${n}</option>`).join('')
+      // เลือก sheet ล่าสุดเป็น default
+      sel.value = workbook.SheetNames[workbook.SheetNames.length - 1]
+      document.getElementById('sheet-select-wrap').style.display = 'block'
+      previewSheet()
+    }
+    reader.readAsArrayBuffer(file)
+  }
+
+  function parseCellDate(ws, rowIdx, colIdx) {
+    const cellRef = XLSX.utils.encode_cell({ r: rowIdx, c: colIdx })
+    const cell = ws[cellRef]
+    if (!cell) return null
+    // ใช้ w (formatted text) ก่อน เช่น "01/06/2026" หลีกเลี่ยง timezone bug
+    if (cell.w) {
+      const m = cell.w.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+      if (m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`
+    }
+    // fallback: Date object
+    if (cell.v instanceof Date) {
+      const d = cell.v
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+    }
+    return null
+  }
+
+  function parseSheet(sheetName) {
+    const ws = workbook.Sheets[sheetName]
+    if (!ws || !ws['!ref']) return []
+
+    const range = XLSX.utils.decode_range(ws['!ref'])
+    const result = []
+
+    // อ่าน header row หา column index
+    const headerMap = {}
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      const cell = ws[XLSX.utils.encode_cell({ r: range.s.r, c })]
+      if (cell && cell.v) headerMap[String(cell.v).trim()] = c
+    }
+
+    const findCol = (...keys) => {
+      for (const k of keys) {
+        for (const [h, c] of Object.entries(headerMap)) {
+          if (h.includes(k)) return c
+        }
+      }
+      return -1
+    }
+
+    const colDate     = findCol('วันที่')     ?? 0
+    const colCustomer = findCol('ลูกค้า')     ?? 1
+    const colTeam     = findCol('ทีม')
+    const colDriver   = findCol('ผู้ส่ง', 'คนขับ') ?? 3
+    const colJobType  = findCol('รายละเอียด', 'ประเภท') ?? 4
+    const colPrice    = findCol('ราคา')       ?? 5
+    const colWeight   = findCol('น.น', 'kg', 'น้ำหนัก') ?? 6
+
+    const getVal = (r, c) => {
+      if (c < 0) return null
+      const cell = ws[XLSX.utils.encode_cell({ r, c })]
+      return cell ? cell.v : null
+    }
+
+    for (let r = range.s.r + 1; r <= range.e.r; r++) {
+      const rowDateStr = parseCellDate(ws, r, colDate)
+      if (!rowDateStr) continue
+      if (rowDateStr <= todayStr) continue  // ข้ามวันนี้และวันที่ผ่านมาแล้ว
+
+      const customer = getVal(r, colCustomer) ? String(getVal(r, colCustomer)).trim() : null
+      if (!customer) continue
+
+      const team       = colTeam >= 0 && getVal(r, colTeam) ? String(getVal(r, colTeam)).trim() : 'Transport'
+      const rawDriver  = getVal(r, colDriver)
+      const driverName = (rawDriver && String(rawDriver).trim()) ? String(rawDriver).trim() : null
+      const jobType    = getVal(r, colJobType) ? String(getVal(r, colJobType)).trim() : null
+      const price      = getVal(r, colPrice) ? Number(getVal(r, colPrice)) : null
+      const weight     = getVal(r, colWeight) ? Number(getVal(r, colWeight)) : null
+
+      result.push({
+        date: todayStr,
+        customer,
+        driver: team,
+        driver_name: driverName,
+        job_type: jobType,
+        price: isNaN(price) ? null : price,
+        weight: isNaN(weight) ? null : weight,
+        status: 'pending',
+        added_by: 'system'
+      })
+    }
+
+    return result
+  }
+
+  function previewSheet() {
+    const sheetName = document.getElementById('sheet-select').value
+    parsedRows = parseSheet(sheetName)
+
+    const card = document.getElementById('preview-card')
+    card.style.display = 'block'
+
+    document.getElementById('btn-count').textContent = parsedRows.length
+    document.getElementById('btn-upload').disabled = parsedRows.length === 0
+
+    // summary
+    const drivers = {}
+    parsedRows.forEach(r => { drivers[r.driver_name] = (drivers[r.driver_name] || 0) + 1 })
+    const dates = [...new Set(parsedRows.map(r => r.date))].sort()
+    const dateLabel = dates.length === 1 ? dates[0] : `${dates[0]} ถึง ${dates[dates.length-1]}`
+    document.getElementById('summary-row').innerHTML =
+      `<div class="summary-item">พบ <b>${parsedRows.length}</b> รายการ (${dateLabel})</div>` +
+      Object.entries(drivers).map(([k,v]) => `<div class="summary-item">${k}: <b>${v}</b></div>`).join('')
+
+    // preview table (max 20 rows)
+    const headers = ['ลูกค้า','คนขับ','ประเภท','ราคา','น้ำหนัก']
+    document.getElementById('preview-head').innerHTML = headers.map(h => `<th>${h}</th>`).join('')
+
+    const preview = parsedRows.slice(0, 20)
+    document.getElementById('preview-body').innerHTML = preview.length
+      ? preview.map(r => `
+          <tr>
+            <td>${r.customer}</td>
+            <td><span class="badge badge-${r.driver.toLowerCase()}">${r.driver_name}</span></td>
+            <td>${r.job_type || '-'}</td>
+            <td>${r.price ? '฿' + r.price.toLocaleString() : '-'}</td>
+            <td>${r.weight ? r.weight + ' kg' : '-'}</td>
+          </tr>
+        `).join('')
+      : `<tr><td colspan="5" style="text-align:center;color:#888;padding:20px;">ไม่พบรายการวันนี้ (${todayStr}) ใน sheet นี้</td></tr>`
+
+    document.getElementById('alert-box').innerHTML = ''
+  }
+
+  async function uploadData() {
+    if (!parsedRows.length) return
+
+    const btn = document.getElementById('btn-upload')
+    btn.disabled = true
+
+    // ลบเฉพาะ pending ของวันที่กำลัง import เท่านั้น
+    // — pending วันอื่นคงไว้เป็นงานค้าง, done ทุกวันเก็บไว้เป็นประวัติ
+    const importDates = [...new Set(parsedRows.map(r => r.date))]
+    const { error: delErr } = await db
+      .from('deliveries')
+      .delete()
+      .in('date', importDates)
+      .eq('status', 'pending')
+
+    if (delErr) {
+      showAlert('เกิดข้อผิดพลาดในการล้างข้อมูลเก่า: ' + delErr.message, 'error')
+      btn.disabled = false
+      return
+    }
+
+    // insert แบบแบ่ง batch
+    const batchSize = 50
+    const progressWrap = document.getElementById('progress-wrap')
+    progressWrap.style.display = 'block'
+
+    for (let i = 0; i < parsedRows.length; i += batchSize) {
+      const batch = parsedRows.slice(i, i + batchSize)
+      const { error } = await db.from('deliveries').insert(batch)
+      if (error) {
+        showAlert('เกิดข้อผิดพลาด: ' + error.message, 'error')
+        btn.disabled = false
+        return
+      }
+      const pct = Math.round(Math.min(i + batchSize, parsedRows.length) / parsedRows.length * 100)
+      document.getElementById('progress-fill').style.width = pct + '%'
+      document.getElementById('progress-text').textContent = `นำเข้าแล้ว ${Math.min(i+batchSize, parsedRows.length)}/${parsedRows.length} รายการ`
+    }
+
+    showAlert(`✅ นำเข้าสำเร็จ ${parsedRows.length} รายการ — คนขับสามารถเปิดดูได้แล้ว`, 'success')
+    btn.textContent = '✅ นำเข้าแล้ว'
+  }
+
+  function showAlert(msg, type) {
+    document.getElementById('alert-box').innerHTML =
+      `<div class="alert alert-${type}">${msg}</div>`
+  }
+</script>
+</body>
+</html>

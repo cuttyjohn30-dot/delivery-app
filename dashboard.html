@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard - ระบบส่งของ</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #333; }
+  .header { background: #1a56db; padding: 14px 20px; color: white; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .header-title { font-weight: bold; font-size: 16px; }
+  .nav-links { padding: 10px 20px; background: white; border-bottom: 1px solid #e5e7eb; display: flex; gap: 12px; }
+  .nav-links a { color: #1a56db; text-decoration: none; font-size: 13px; }
+  .content { max-width: 1000px; margin: 0 auto; padding: 20px; }
+
+  /* Filter bar */
+  .filter-bar { background: white; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .filter-bar label { font-size: 13px; font-weight: bold; color: #555; }
+  .tab-btn { padding: 6px 14px; border-radius: 20px; border: 1px solid #d1d5db; background: white; font-size: 13px; cursor: pointer; }
+  .tab-btn.active { background: #1a56db; color: white; border-color: #1a56db; }
+  input[type=date] { padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px; }
+  .btn-go { background: #1a56db; color: white; border: none; padding: 6px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+  .refresh-btn { background: #eff6ff; border: 1px solid #bfdbfe; color: #1a56db; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .stat-card { background: white; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  .stat-num { font-size: 32px; font-weight: bold; color: #1a56db; }
+  .stat-num.green { color: #16a34a; }
+  .stat-num.yellow { color: #f59e0b; }
+  .stat-label { font-size: 12px; color: #888; margin-top: 4px; }
+  .card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  .card-title { font-weight: bold; font-size: 15px; margin-bottom: 12px; color: #1e3a8a; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #1a56db; color: white; padding: 10px 12px; text-align: left; }
+  td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8f9fa; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+  .badge-done { background: #dcfce7; color: #166534; }
+  .badge-pending { background: #fef9c3; color: #854d0e; }
+  .badge-arrive { background: #ede9fe; color: #5b21b6; }
+  .driver-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .driver-name { width: 80px; font-weight: bold; font-size: 13px; }
+  .bar-track { flex: 1; background: #e5e7eb; border-radius: 10px; height: 12px; }
+  .bar-fill { background: #1a56db; height: 12px; border-radius: 10px; transition: width .5s; }
+  .bar-text { font-size: 12px; color: #666; width: 60px; text-align: right; }
+  .loading { text-align: center; color: #888; padding: 30px; }
+  .driver-bar { cursor: pointer; border-radius: 8px; padding: 6px 4px; transition: background .15s; }
+  .driver-bar:hover { background: #eff6ff; }
+  .driver-bar .driver-name { color: #1a56db; text-decoration: underline dotted; }
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; }
+  .modal-box { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    background: white; border-radius: 16px; width: 90%; max-width: 700px; max-height: 85vh;
+    overflow-y: auto; z-index: 201; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+  .modal-header { background: #1a56db; color: white; padding: 16px 20px; border-radius: 16px 16px 0 0;
+    display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; }
+  .modal-close { background: none; border: none; color: white; font-size: 22px; cursor: pointer; line-height: 1; }
+  .modal-body { padding: 16px 20px; }
+  .date-group { margin-bottom: 20px; }
+  .date-group-title { font-weight: bold; font-size: 14px; color: #1e3a8a; background: #eff6ff;
+    padding: 6px 12px; border-radius: 8px; margin-bottom: 8px; }
+  .mini-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .mini-table td { padding: 8px 10px; border-bottom: 1px solid #f0f0f0; }
+  .mini-table tr:last-child td { border-bottom: none; }
+  @media (max-width: 600px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .content { padding: 12px; }
+    table { font-size: 12px; }
+    td, th { padding: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">📊 Dashboard</div>
+  <button class="refresh-btn" onclick="loadAll()">🔄 รีเฟรช</button>
+</div>
+
+<div class="nav-links">
+  <a href="index.html">📱 หน้าคนขับ</a>
+  <a href="upload.html">📤 อัพโหลด Excel</a>
+</div>
+
+<div class="content">
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <label>ดูข้อมูล:</label>
+    <button class="tab-btn active" id="tab-today" onclick="setFilter('today')">วันนี้</button>
+    <button class="tab-btn" id="tab-all" onclick="setFilter('all')">ทั้งหมด</button>
+    <button class="tab-btn" id="tab-custom" onclick="setFilter('custom')">เลือกวัน</button>
+    <input type="date" id="custom-date" style="display:none;" onchange="loadAll()">
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-num" id="s-total">-</div><div class="stat-label">งานทั้งหมด</div></div>
+    <div class="stat-card"><div class="stat-num green" id="s-done">-</div><div class="stat-label">ส่งแล้ว ✅</div></div>
+    <div class="stat-card"><div class="stat-num yellow" id="s-pending">-</div><div class="stat-label">รอดำเนินการ ⏳</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-pct" style="font-size:24px;">-</div><div class="stat-label">% เสร็จแล้ว</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">ความคืบหน้าแต่ละคน</div>
+    <div id="driver-progress"><div class="loading">กำลังโหลด...</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" id="table-title">รายการทั้งหมด</div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>วันที่</th>
+            <th>ลูกค้า</th>
+            <th>คนขับ</th>
+            <th>ประเภท</th>
+            <th>ราคา</th>
+            <th>สถานะ</th>
+            <th>ถึง</th>
+            <th>ส่งเสร็จ</th>
+            <th>หมายเหตุ</th>
+          </tr>
+        </thead>
+        <tbody id="main-tbody"><tr><td colspan="7" class="loading">กำลังโหลด...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+<!-- Modal คนขับ -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal()"></div>
+<div class="modal-box" id="modal-box">
+  <div class="modal-header">
+    <div>
+      <div style="font-size:18px; font-weight:bold;" id="modal-name"></div>
+      <div style="font-size:12px; opacity:.8;" id="modal-sub"></div>
+    </div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+  </div>
+  <div class="modal-body" id="modal-body"></div>
+</div>
+
+</div>
+
+<script>
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+  const todayStr = new Date().toISOString().split('T')[0]
+  let currentFilter = 'today'
+
+  document.getElementById('custom-date').value = todayStr
+
+  function setFilter(f) {
+    currentFilter = f
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
+    document.getElementById('tab-' + f).classList.add('active')
+    document.getElementById('custom-date').style.display = f === 'custom' ? 'inline-block' : 'none'
+    loadAll()
+  }
+
+  async function loadAll() {
+    let query = db.from('deliveries').select('*').order('date', {ascending: false}).order('id')
+
+    if (currentFilter === 'today') {
+      query = query.eq('date', todayStr)
+      document.getElementById('table-title').textContent = 'รายการวันนี้'
+    } else if (currentFilter === 'custom') {
+      const d = document.getElementById('custom-date').value
+      query = query.eq('date', d)
+      document.getElementById('table-title').textContent = 'รายการวันที่ ' + new Date(d).toLocaleDateString('th-TH', {day:'numeric', month:'long', year:'numeric'})
+    } else {
+      document.getElementById('table-title').textContent = 'ประวัติทั้งหมด'
+    }
+
+    const { data, error } = await query
+    if (error || !data) return
+
+    const total = data.length
+    const done  = data.filter(d => d.status === 'done').length
+    const pending = total - done
+
+    document.getElementById('s-total').textContent = total
+    document.getElementById('s-done').textContent = done
+    document.getElementById('s-pending').textContent = pending
+    document.getElementById('s-pct').textContent = total ? Math.round(done/total*100) + '%' : '0%'
+
+    // progress per driver (เฉพาะที่มีชื่อ)
+    const drivers = {}
+    data.filter(d => d.driver_name).forEach(d => {
+      if (!drivers[d.driver_name]) drivers[d.driver_name] = { total: 0, done: 0 }
+      drivers[d.driver_name].total++
+      if (d.status === 'done') drivers[d.driver_name].done++
+    })
+    document.getElementById('driver-progress').innerHTML = Object.entries(drivers).map(([name, v]) => {
+      const pct = v.total ? Math.round(v.done/v.total*100) : 0
+      return `<div class="driver-bar" onclick="openDriverModal('${name}')">
+        <div class="driver-name">${name}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+        <div class="bar-text">${v.done}/${v.total}</div>
+      </div>`
+    }).join('') || '<div style="color:#888;font-size:13px;">ยังไม่มีข้อมูล</div>'
+
+    // table
+    document.getElementById('main-tbody').innerHTML = data.length ? data.map(d => `
+      <tr>
+        <td style="color:#888; white-space:nowrap;">${new Date(d.date).toLocaleDateString('th-TH',{day:'numeric',month:'short'})}</td>
+        <td><b>${d.customer}</b></td>
+        <td>${d.driver_name || '<span style="color:#aaa;">ยังไม่ระบุ</span>'}</td>
+        <td>${d.job_type || '-'}</td>
+        <td>${d.price ? '฿' + Number(d.price).toLocaleString() : '-'}</td>
+        <td><span class="badge ${d.status==='done' ? 'badge-done' : d.arrived_at ? 'badge-arrive' : 'badge-pending'}">${d.status==='done' ? '✅ ส่งแล้ว' : d.arrived_at ? '📍 ถึงแล้ว' : '⏳ รอ'}</span></td>
+        <td style="color:#7c3aed; font-size:12px;">${d.arrived_at ? new Date(d.arrived_at).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})+' น.' : '-'}</td>
+        <td style="color:#888; font-size:12px;">${d.done_at ? new Date(d.done_at).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})+' น.' : '-'}</td>
+        <td style="font-size:12px; color:#555; max-width:120px;">${d.notes || '-'}</td>
+      </tr>
+    `).join('') : `<tr><td colspan="9" style="text-align:center;color:#888;padding:30px;">ไม่มีข้อมูล</td></tr>`
+  }
+
+  async function openDriverModal(name) {
+    document.getElementById('modal-name').textContent = '🧑 ' + name
+    document.getElementById('modal-sub').textContent = 'กำลังโหลด...'
+    document.getElementById('modal-body').innerHTML = '<div class="loading">กำลังโหลด...</div>'
+    document.getElementById('modal-overlay').style.display = 'block'
+    document.getElementById('modal-box').style.display = 'block'
+
+    const { data, error } = await db
+      .from('deliveries')
+      .select('*')
+      .eq('driver_name', name)
+      .order('date', { ascending: false })
+      .order('id')
+
+    if (error || !data) { document.getElementById('modal-body').innerHTML = 'เกิดข้อผิดพลาด'; return }
+
+    const total = data.length
+    const done  = data.filter(d => d.status === 'done').length
+    document.getElementById('modal-sub').textContent =
+      `รวม ${total} รายการ · ส่งแล้ว ${done} · รอ ${total - done}`
+
+    // จัดกลุ่มตามวันที่
+    const byDate = {}
+    data.forEach(d => {
+      if (!byDate[d.date]) byDate[d.date] = []
+      byDate[d.date].push(d)
+    })
+
+    document.getElementById('modal-body').innerHTML = Object.entries(byDate).map(([date, items]) => {
+      const doneCnt = items.filter(i => i.status === 'done').length
+      const dateLabel = new Date(date).toLocaleDateString('th-TH', { weekday:'short', day:'numeric', month:'long', year:'numeric' })
+      const rows = items.map(i => `
+        <tr>
+          <td>${i.customer}</td>
+          <td style="color:#666;">${i.job_type || '-'}</td>
+          <td>${i.price ? '฿' + Number(i.price).toLocaleString() : '-'}</td>
+          <td><span class="badge ${i.status==='done' ? 'badge-done' : i.arrived_at ? 'badge-arrive' : 'badge-pending'}">
+            ${i.status==='done' ? '✅ ส่งแล้ว' : i.arrived_at ? '📍 ถึงแล้ว' : '⏳ รอ'}</span></td>
+          <td style="color:#7c3aed;font-size:12px;">${i.arrived_at ? new Date(i.arrived_at).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})+' น.' : '-'}</td>
+          <td style="color:#888;font-size:12px;">${i.done_at ? new Date(i.done_at).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})+' น.' : '-'}</td>
+          <td style="font-size:12px;color:#555;">${i.notes || '-'}</td>
+        </tr>`).join('')
+      return `
+        <div class="date-group">
+          <div class="date-group-title">📅 ${dateLabel} &nbsp;·&nbsp; ${doneCnt}/${items.length} เสร็จ</div>
+          <table class="mini-table">
+            <thead><tr style="background:#f8f9fa;">
+              <td><b>ลูกค้า</b></td><td><b>ประเภท</b></td><td><b>ราคา</b></td><td><b>สถานะ</b></td><td><b>ถึง</b></td><td><b>ส่งเสร็จ</b></td><td><b>หมายเหตุ</b></td>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`
+    }).join('') || '<div style="color:#888; text-align:center; padding:20px;">ยังไม่มีข้อมูล</div>'
+  }
+
+  function closeModal() {
+    document.getElementById('modal-overlay').style.display = 'none'
+    document.getElementById('modal-box').style.display = 'none'
+  }
+
+  loadAll()
+  setInterval(loadAll, 30000)
+</script>
+</body>
+</html>
