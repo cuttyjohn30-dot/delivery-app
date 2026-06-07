@@ -61,6 +61,14 @@
   .delivery-item.arrived { background: #faf5ff; border-color: #c4b5fd; }
   .btn-arrive { background: #7c3aed; color: white; border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; font-size: 13px; font-weight: bold; white-space: nowrap; }
   .btn-done { background: #16a34a; color: white; border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; font-size: 13px; font-weight: bold; white-space: nowrap; }
+  .km-card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); border-left: 4px solid #f59e0b; }
+  .km-title { font-size: 14px; font-weight: bold; color: #92400e; margin-bottom: 10px; }
+  .km-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .km-field label { font-size: 12px; color: #555; margin-bottom: 4px; display: block; }
+  .km-field input { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 15px; text-align: center; }
+  .km-summary { background: #fef3c7; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #92400e; margin-bottom: 10px; text-align: center; }
+  .btn-km { width: 100%; padding: 12px; background: #f59e0b; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
+  .btn-km:active { background: #d97706; }
 </style>
 </head>
 <body>
@@ -98,6 +106,23 @@
       </div>
       <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
     </div>
+    <!-- KM Tracking Card -->
+    <div class="km-card" id="km-card">
+      <div class="km-title">🚗 บันทึกระยะทางวันนี้</div>
+      <div id="km-summary-text"></div>
+      <div class="km-row">
+        <div class="km-field">
+          <label>เลขไมล์ตอนออก (กม.)</label>
+          <input id="km-start" type="number" placeholder="เช่น 12500" />
+        </div>
+        <div class="km-field">
+          <label>เลขไมล์ตอนกลับ (กม.)</label>
+          <input id="km-end" type="number" placeholder="เช่น 12780" />
+        </div>
+      </div>
+      <button class="btn-km" onclick="saveKm()">💾 บันทึกระยะทาง</button>
+    </div>
+
     <div id="delivery-list"></div>
     <button class="btn-add" onclick="openAddModal()">+ เพิ่มงานส่งเพิ่มเติม</button>
   </div>
@@ -177,7 +202,59 @@
       new Date().toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' })
 
     showPage('page-list')
-    await loadDeliveries()
+    await Promise.all([loadDeliveries(), loadKm()])
+  }
+
+  async function loadKm() {
+    const { data } = await db
+      .from('km_log')
+      .select('*')
+      .eq('date', todayStr)
+      .eq('driver_name', currentDriver)
+      .maybeSingle()
+
+    if (data) {
+      document.getElementById('km-start').value = data.km_start || ''
+      document.getElementById('km-end').value = data.km_end || ''
+      if (data.km_start && data.km_end) {
+        const diff = data.km_end - data.km_start
+        document.getElementById('km-summary-text').innerHTML =
+          `<div class="km-summary">วันนี้วิ่ง <b>${diff.toLocaleString()} กม.</b> (${data.km_start} → ${data.km_end})</div>`
+      } else {
+        document.getElementById('km-summary-text').innerHTML = ''
+      }
+    } else {
+      document.getElementById('km-start').value = ''
+      document.getElementById('km-end').value = ''
+      document.getElementById('km-summary-text').innerHTML = ''
+    }
+  }
+
+  async function saveKm() {
+    const kmStart = parseFloat(document.getElementById('km-start').value)
+    const kmEnd = parseFloat(document.getElementById('km-end').value)
+    if (!kmStart) { showToast('กรุณาใส่เลขไมล์ตอนออก', '#ef4444'); return }
+    if (kmEnd && kmEnd < kmStart) { showToast('เลขไมล์ตอนกลับต้องมากกว่าตอนออก', '#ef4444'); return }
+
+    const { data: existing } = await db
+      .from('km_log')
+      .select('id')
+      .eq('date', todayStr)
+      .eq('driver_name', currentDriver)
+      .maybeSingle()
+
+    const payload = { date: todayStr, driver_name: currentDriver, km_start: kmStart, km_end: kmEnd || null }
+    let err
+    if (existing) {
+      const res = await db.from('km_log').update(payload).eq('id', existing.id)
+      err = res.error
+    } else {
+      const res = await db.from('km_log').insert(payload)
+      err = res.error
+    }
+    if (err) { showToast('เกิดข้อผิดพลาด: ' + err.message, '#ef4444'); return }
+    showToast('✅ บันทึกระยะทางแล้ว')
+    await loadKm()
   }
 
   async function loadDeliveries() {
