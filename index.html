@@ -261,14 +261,12 @@
   async function loadDeliveries() {
     document.getElementById('delivery-list').innerHTML = '<div class="loading">กำลังโหลด...</div>'
 
-    // ดึงงานวันนี้ + งานค้าง (pending จากวันก่อน) ของคนขับนี้หรือไม่ระบุคนขับ
+    // ดึงเฉพาะงานวันนี้ของคนขับนี้หรือไม่ระบุคนขับ
     const { data, error } = await db
       .from('deliveries')
       .select('*')
       .or(`driver_name.eq.${currentDriver},driver_name.is.null`)
-      .or('status.eq.pending,status.eq.done')
-      .lte('date', todayStr)
-      .order('date')
+      .eq('date', todayStr)
       .order('id')
 
     if (error) {
@@ -276,10 +274,7 @@
       return
     }
 
-    const today  = data.filter(d => d.date === todayStr)
-    const carry  = data.filter(d => d.date < todayStr && d.status === 'pending')
-
-    renderList(today, carry)
+    renderList(data, [])
   }
 
   function renderList(today, carry) {
