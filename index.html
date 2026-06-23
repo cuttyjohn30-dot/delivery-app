@@ -135,14 +135,9 @@
   <div class="modal-title">เพิ่มงานส่งเพิ่มเติม</div>
   <label>ชื่อลูกค้า *</label>
   <input id="add-customer" type="text" placeholder="เช่น Skanem, Komark" />
-  <label>ประเภทงาน</label>
-  <select id="add-type">
-    <option>ส่งของ</option>
-    <option>รับของ</option>
-    <option>ส่งของ+รับของ</option>
-    <option>ทิ้งของ</option>
-    <option>เก็บเงิน</option>
-  </select>
+  <label>ประเภทงาน <span style="font-size:11px;color:#888;">(เลือกได้หลายอย่าง)</span></label>
+  <div id="type-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>
+  <input type="hidden" id="add-type" />
   <label>ราคา (ถ้ามี)</label>
   <input id="add-price" type="number" placeholder="เช่น 9500" />
   <div class="btn-row">
@@ -411,10 +406,33 @@
     await loadDeliveries()
   }
 
+  const JOB_TYPES = ['ส่งของ','รับของ','ส่งของ+รับของ','เก็บเงิน','นับ Consignment','IS Visit']
+  let selectedTypes = new Set()
+
+  function renderChips() {
+    document.getElementById('type-chips').innerHTML = JOB_TYPES.map(t => {
+      const on = selectedTypes.has(t)
+      return `<div onclick="toggleType('${t}')" style="
+        padding:8px 14px;border-radius:20px;font-size:13px;cursor:pointer;user-select:none;
+        border:${on?'2px solid #1a56db':'1px solid #d1d5db'};
+        background:${on?'#eff6ff':'white'};color:${on?'#1a56db':'#333'};
+        font-weight:${on?'bold':'normal'};transition:all .15s;">${on?'✓ ':''}${t}</div>`
+    }).join('')
+    document.getElementById('add-type').value = [...selectedTypes].join(', ')
+  }
+
+  function toggleType(t) {
+    if (selectedTypes.has(t)) selectedTypes.delete(t)
+    else selectedTypes.add(t)
+    renderChips()
+  }
+
   function openAddModal() {
     document.getElementById('add-customer').value = ''
     document.getElementById('add-price').value = ''
     document.getElementById('add-customer').style.borderColor = '#d1d5db'
+    selectedTypes = new Set()
+    renderChips()
     document.getElementById('add-modal').style.display = 'block'
     document.getElementById('overlay').style.display = 'block'
     setTimeout(() => document.getElementById('add-customer').focus(), 100)
