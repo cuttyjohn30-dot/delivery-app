@@ -9,49 +9,49 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #333; }
-  .header { background: #1a56db; padding: 14px 16px; color: white; font-weight: bold; font-size: 16px; position: sticky; top: 0; z-index: 100; }
+  .header { background: #F0691F; padding: 14px 16px; color: white; font-weight: bold; font-size: 16px; position: sticky; top: 0; z-index: 100; }
   .page { display: none; max-width: 480px; margin: 0 auto; padding: 16px; }
   .page.active { display: block; }
   .card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
-  .section-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; color: #1e3a8a; }
+  .section-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; color: #1A1A1A; }
   .driver-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
   .driver-btn { background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 10px; padding: 16px 10px; text-align: center; cursor: pointer; transition: all .2s; }
-  .driver-btn:hover, .driver-btn:active { border-color: #1a56db; background: #eff6ff; }
+  .driver-btn:hover, .driver-btn:active { border-color: #F0691F; background: #fff3ee; }
   .driver-btn .icon { font-size: 28px; }
   .driver-btn .name { font-weight: bold; margin-top: 6px; font-size: 15px; }
   .driver-btn .code { font-size: 11px; color: #888; margin-top: 2px; }
   .driver-header { display: flex; align-items: center; gap: 12px; }
-  .driver-avatar { width: 46px; height: 46px; background: #1a56db; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; flex-shrink: 0; }
-  .back-btn { background: none; border: none; color: #1a56db; cursor: pointer; font-size: 14px; padding: 0 0 12px 0; display: flex; align-items: center; gap: 4px; }
+  .driver-avatar { width: 46px; height: 46px; background: #F0691F; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; flex-shrink: 0; }
+  .back-btn { background: none; border: none; color: #F0691F; cursor: pointer; font-size: 14px; padding: 0 0 12px 0; display: flex; align-items: center; gap: 4px; }
   .progress-bar { background: #e5e7eb; border-radius: 10px; height: 8px; margin-top: 8px; }
-  .progress-fill { background: #1a56db; height: 8px; border-radius: 10px; transition: width .5s; }
+  .progress-fill { background: #F0691F; height: 8px; border-radius: 10px; transition: width .5s; }
   .delivery-item { border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; background: white; }
   .delivery-item.done { background: #f0fdf4; border-color: #86efac; }
   .delivery-customer { font-weight: bold; font-size: 15px; }
   .delivery-meta { font-size: 12px; color: #666; margin-top: 3px; }
-  .delivery-price { font-size: 13px; color: #1a56db; margin-top: 3px; font-weight: bold; }
+  .delivery-price { font-size: 13px; color: #F0691F; margin-top: 3px; font-weight: bold; }
   .delivery-added { font-size: 11px; color: #f59e0b; margin-top: 2px; }
   .done-time { font-size: 11px; color: #16a34a; margin-top: 3px; }
-  .btn-confirm { background: #1a56db; color: white; border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; font-size: 13px; font-weight: bold; white-space: nowrap; }
+  .btn-confirm { background: #F0691F; color: white; border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; font-size: 13px; font-weight: bold; white-space: nowrap; }
   .btn-confirm:active { opacity: .8; }
-  .btn-add { width: 100%; background: #1a56db; color: white; border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: bold; cursor: pointer; margin-bottom: 80px; }
+  .btn-add { width: 100%; background: #F0691F; color: white; border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: bold; cursor: pointer; margin-bottom: 80px; }
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 199; }
   .modal { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 20px 20px 0 0; padding: 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.15); z-index: 200; max-width: 480px; margin: 0 auto; }
   .modal-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 16px; }
   .modal-title { font-weight: bold; font-size: 16px; text-align: center; margin-bottom: 16px; }
   label { font-size: 13px; color: #555; display: block; margin-bottom: 4px; }
   input, select { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; margin-bottom: 12px; background: white; }
-  input:focus, select:focus { outline: none; border-color: #1a56db; }
+  input:focus, select:focus { outline: none; border-color: #F0691F; }
   .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .btn-cancel { padding: 12px; border: 1px solid #d1d5db; background: white; border-radius: 8px; font-size: 14px; cursor: pointer; }
-  .btn-submit { padding: 12px; background: #1a56db; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
+  .btn-submit { padding: 12px; background: #F0691F; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
   .empty-state { text-align: center; color: #888; padding: 40px 20px; }
   .loading { text-align: center; color: #888; padding: 30px; }
   .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #16a34a; color: white; padding: 10px 20px; border-radius: 20px; font-size: 14px; z-index: 300; display: none; }
   .section-header { display: flex; align-items: center; gap: 8px; margin: 12px 0 8px; }
   .section-line { flex: 1; height: 1px; background: #e5e7eb; }
   .section-badge { font-size: 11px; padding: 3px 10px; border-radius: 10px; font-weight: bold; white-space: nowrap; }
-  .badge-today { background: #dbeafe; color: #1e40af; }
+  .badge-today { background: #ffe8dc; color: #c0450e; }
   .badge-carry { background: #fef3c7; color: #92400e; }
   .delivery-item.carry { border-left: 3px solid #f59e0b; background: #fffbeb; }
   .delivery-item.carry.done { background: #f0fdf4; border-color: #86efac; border-left: 3px solid #86efac; }
@@ -73,7 +73,13 @@
 </head>
 <body>
 
-<div class="header">🚚 ระบบส่งของ</div>
+<div class="header" style="background:#1A1A1A; display:flex; align-items:center; gap:10px;">
+  <span style="color:#F0691F; font-size:20px;">■</span>
+  <div>
+    <div style="font-size:13px; letter-spacing:1px; color:#F0691F; font-weight:bold;">PRESS SYSTEMS GROUP</div>
+    <div style="font-size:11px; color:#aaa; font-weight:normal;">ระบบติดตามการส่งของ</div>
+  </div>
+</div>
 
 <!-- หน้าเลือกชื่อ -->
 <div class="page active" id="page-select">
@@ -414,8 +420,8 @@
       const on = selectedTypes.has(t)
       return `<div onclick="toggleType('${t}')" style="
         padding:8px 14px;border-radius:20px;font-size:13px;cursor:pointer;user-select:none;
-        border:${on?'2px solid #1a56db':'1px solid #d1d5db'};
-        background:${on?'#eff6ff':'white'};color:${on?'#1a56db':'#333'};
+        border:${on?'2px solid #F0691F':'1px solid #d1d5db'};
+        background:${on?'#fff3ee':'white'};color:${on?'#F0691F':'#333'};
         font-weight:${on?'bold':'normal'};transition:all .15s;">${on?'✓ ':''}${t}</div>`
     }).join('')
     document.getElementById('add-type').value = [...selectedTypes].join(', ')

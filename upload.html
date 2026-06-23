@@ -10,16 +10,16 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #333; }
-  .header { background: #1a56db; padding: 14px 20px; color: white; font-weight: bold; font-size: 16px; }
+  .header { background: #F0691F; padding: 14px 20px; color: white; font-weight: bold; font-size: 16px; }
   .nav-links { padding: 10px 20px; background: white; border-bottom: 1px solid #e5e7eb; display: flex; gap: 12px; }
-  .nav-links a { color: #1a56db; text-decoration: none; font-size: 13px; }
+  .nav-links a { color: #F0691F; text-decoration: none; font-size: 13px; }
   .content { max-width: 700px; margin: 0 auto; padding: 20px; }
   .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
-  .card-title { font-weight: bold; font-size: 15px; margin-bottom: 14px; color: #1e3a8a; }
-  .upload-zone { border: 2px dashed #93c5fd; border-radius: 12px; padding: 50px 20px; text-align: center; background: #eff6ff; cursor: pointer; transition: all .2s; }
-  .upload-zone:hover, .upload-zone.drag { border-color: #1a56db; background: #dbeafe; }
+  .card-title { font-weight: bold; font-size: 15px; margin-bottom: 14px; color: #1A1A1A; }
+  .upload-zone { border: 2px dashed #F0691F; border-radius: 12px; padding: 50px 20px; text-align: center; background: #fff3ee; cursor: pointer; transition: all .2s; }
+  .upload-zone:hover, .upload-zone.drag { border-color: #F0691F; background: #dbeafe; }
   .upload-icon { font-size: 52px; margin-bottom: 10px; }
-  .upload-text { color: #1a56db; font-weight: bold; font-size: 16px; }
+  .upload-text { color: #F0691F; font-weight: bold; font-size: 16px; }
   .upload-sub { color: #888; font-size: 13px; margin-top: 6px; }
   #file-input { display: none; }
   .sheet-select { margin-top: 14px; }
@@ -48,12 +48,18 @@
   .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
   .summary-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
   .summary-item { font-size: 13px; color: #555; }
-  .summary-item b { color: #1a56db; }
+  .summary-item b { color: #F0691F; }
 </style>
 </head>
 <body>
 
-<div class="header">📤 อัพโหลดตารางจัดรถ</div>
+<div class="header" style="background:#1A1A1A; display:flex; align-items:center; gap:10px;">
+  <span style="color:#F0691F; font-size:20px;">■</span>
+  <div>
+    <div style="font-size:13px; letter-spacing:1px; color:#F0691F; font-weight:bold;">PRESS SYSTEMS GROUP</div>
+    <div style="font-size:11px; color:#aaa; font-weight:normal;">อัพโหลดตารางจัดรถ</div>
+  </div>
+</div>
 
 <div class="nav-links">
   <a href="index.html">📱 หน้าคนขับ</a>

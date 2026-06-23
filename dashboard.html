@@ -9,31 +9,31 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #333; }
-  .header { background: #1a56db; padding: 14px 20px; color: white; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .header { background: #F0691F; padding: 14px 20px; color: white; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
   .header-title { font-weight: bold; font-size: 16px; }
   .nav-links { padding: 10px 20px; background: white; border-bottom: 1px solid #e5e7eb; display: flex; gap: 12px; }
-  .nav-links a { color: #1a56db; text-decoration: none; font-size: 13px; }
+  .nav-links a { color: #F0691F; text-decoration: none; font-size: 13px; }
   .content { max-width: 1000px; margin: 0 auto; padding: 20px; }
 
   /* Filter bar */
   .filter-bar { background: white; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .filter-bar label { font-size: 13px; font-weight: bold; color: #555; }
   .tab-btn { padding: 6px 14px; border-radius: 20px; border: 1px solid #d1d5db; background: white; font-size: 13px; cursor: pointer; }
-  .tab-btn.active { background: #1a56db; color: white; border-color: #1a56db; }
+  .tab-btn.active { background: #F0691F; color: white; border-color: #F0691F; }
   input[type=date] { padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px; }
-  .btn-go { background: #1a56db; color: white; border: none; padding: 6px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
-  .refresh-btn { background: #eff6ff; border: 1px solid #bfdbfe; color: #1a56db; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .btn-go { background: #F0691F; color: white; border: none; padding: 6px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+  .refresh-btn { background: #fff3ee; border: 1px solid #ffd4bc; color: #F0691F; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; }
 
   .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
   .stat-card { background: white; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
-  .stat-num { font-size: 32px; font-weight: bold; color: #1a56db; }
+  .stat-num { font-size: 32px; font-weight: bold; color: #F0691F; }
   .stat-num.green { color: #16a34a; }
   .stat-num.yellow { color: #f59e0b; }
   .stat-label { font-size: 12px; color: #888; margin-top: 4px; }
   .card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
-  .card-title { font-weight: bold; font-size: 15px; margin-bottom: 12px; color: #1e3a8a; }
+  .card-title { font-weight: bold; font-size: 15px; margin-bottom: 12px; color: #1A1A1A; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { background: #1a56db; color: white; padding: 10px 12px; text-align: left; }
+  th { background: #F0691F; color: white; padding: 10px 12px; text-align: left; }
   td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; }
   tr:last-child td { border-bottom: none; }
   tr:hover td { background: #f8f9fa; }
@@ -44,23 +44,23 @@
   .driver-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
   .driver-name { width: 80px; font-weight: bold; font-size: 13px; }
   .bar-track { flex: 1; background: #e5e7eb; border-radius: 10px; height: 12px; }
-  .bar-fill { background: #1a56db; height: 12px; border-radius: 10px; transition: width .5s; }
+  .bar-fill { background: #F0691F; height: 12px; border-radius: 10px; transition: width .5s; }
   .bar-text { font-size: 12px; color: #666; width: 60px; text-align: right; }
   .loading { text-align: center; color: #888; padding: 30px; }
   .driver-bar { cursor: pointer; border-radius: 8px; padding: 6px 4px; transition: background .15s; }
-  .driver-bar:hover { background: #eff6ff; }
-  .driver-bar .driver-name { color: #1a56db; text-decoration: underline dotted; }
+  .driver-bar:hover { background: #fff3ee; }
+  .driver-bar .driver-name { color: #F0691F; text-decoration: underline dotted; }
   /* Modal */
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; }
   .modal-box { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
     background: white; border-radius: 16px; width: 90%; max-width: 700px; max-height: 85vh;
     overflow-y: auto; z-index: 201; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
-  .modal-header { background: #1a56db; color: white; padding: 16px 20px; border-radius: 16px 16px 0 0;
+  .modal-header { background: #F0691F; color: white; padding: 16px 20px; border-radius: 16px 16px 0 0;
     display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; }
   .modal-close { background: none; border: none; color: white; font-size: 22px; cursor: pointer; line-height: 1; }
   .modal-body { padding: 16px 20px; }
   .date-group { margin-bottom: 20px; }
-  .date-group-title { font-weight: bold; font-size: 14px; color: #1e3a8a; background: #eff6ff;
+  .date-group-title { font-weight: bold; font-size: 14px; color: #1A1A1A; background: #fff3ee;
     padding: 6px 12px; border-radius: 8px; margin-bottom: 8px; }
   .mini-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .mini-table td { padding: 8px 10px; border-bottom: 1px solid #f0f0f0; }
@@ -75,9 +75,15 @@
 </head>
 <body>
 
-<div class="header">
-  <div class="header-title">📊 Dashboard</div>
-  <button class="refresh-btn" onclick="loadAll()">🔄 รีเฟรช</button>
+<div class="header" style="background:#1A1A1A;">
+  <div style="display:flex; align-items:center; gap:10px;">
+    <span style="color:#F0691F; font-size:20px;">■</span>
+    <div>
+      <div style="font-size:13px; letter-spacing:1px; color:#F0691F; font-weight:bold;">PRESS SYSTEMS GROUP</div>
+      <div style="font-size:11px; color:#aaa; font-weight:normal;">Dashboard ติดตามการส่งของ</div>
+    </div>
+  </div>
+  <button class="refresh-btn" onclick="loadAll()" style="border-color:#F0691F; color:#F0691F; background:transparent;">🔄 รีเฟรช</button>
 </div>
 
 <div class="nav-links">
