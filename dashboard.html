@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard - ระบบส่งของ</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="config.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -98,7 +99,10 @@
       <div style="font-size:11px; color:#aaa; font-weight:normal;">Dashboard ติดตามการส่งของ</div>
     </div>
   </div>
-  <button class="refresh-btn" onclick="loadAll()" style="border-color:#F0691F; color:#F0691F; background:transparent;">🔄 รีเฟรช</button>
+  <div style="display:flex;gap:8px;">
+    <button class="refresh-btn" onclick="loadAll()" style="border-color:#F0691F; color:#F0691F; background:transparent;">🔄 รีเฟรช</button>
+    <button class="refresh-btn" onclick="exportExcel()" style="border-color:#16a34a; color:#16a34a; background:transparent;">📥 Export Excel</button>
+  </div>
 </div>
 
 <div class="nav-links">
@@ -506,6 +510,54 @@
         </tr>`
       }).join('')}</tbody>
     </table></div>`
+  }
+
+  async function exportExcel() {
+    let query = db.from('deliveries').select('*').order('date', {ascending: false}).order('id')
+    let filename = 'deliveries'
+
+    if (currentFilter === 'today') {
+      query = query.eq('date', todayStr)
+      filename = 'deliveries_' + todayStr
+    } else if (currentFilter === 'custom') {
+      const d = document.getElementById('custom-date').value
+      query = query.eq('date', d)
+      filename = 'deliveries_' + d
+    } else if (currentFilter === 'month') {
+      const y = currentMonthDate.getFullYear()
+      const m = currentMonthDate.getMonth()
+      const firstDay = `${y}-${String(m+1).padStart(2,'0')}-01`
+      const lastDay  = `${y}-${String(m+1).padStart(2,'0')}-${new Date(y, m+1, 0).getDate()}`
+      query = query.gte('date', firstDay).lte('date', lastDay)
+      filename = `deliveries_${y}-${String(m+1).padStart(2,'0')}`
+    } else {
+      filename = 'deliveries_all'
+    }
+
+    const { data, error } = await query
+    if (error || !data || !data.length) { alert('ไม่มีข้อมูลที่จะ Export'); return }
+
+    const formatTime = iso => iso ? new Date(iso).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}) : ''
+    const formatDate = d => new Date(d).toLocaleDateString('th-TH', {day:'numeric', month:'short', year:'numeric'})
+
+    const rows = data.map(d => ({
+      'วันที่':       formatDate(d.date),
+      'ลูกค้า':       d.customer,
+      'คนขับ':        d.driver_name || '',
+      'ประเภทงาน':   d.job_type || '',
+      'ราคา':         d.price || '',
+      'น้ำหนัก (kg)': d.weight || '',
+      'สถานะ':        d.status === 'done' ? 'ส่งแล้ว' : 'รอ',
+      'เวลาถึง':      formatTime(d.arrived_at),
+      'เวลาส่งเสร็จ': formatTime(d.done_at),
+      'หมายเหตุ':     d.notes || '',
+    }))
+
+    const ws = XLSX.utils.json_to_sheet(rows)
+    ws['!cols'] = [14,20,10,16,10,12,10,10,12,20].map(w => ({ wch: w }))
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Deliveries')
+    XLSX.writeFile(wb, filename + '.xlsx')
   }
 
   loadAll()
