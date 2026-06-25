@@ -69,6 +69,39 @@
   .km-summary { background: #fef3c7; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #92400e; margin-bottom: 10px; text-align: center; }
   .btn-km { width: 100%; padding: 12px; background: #f59e0b; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
   .btn-km:active { background: #d97706; }
+  /* Kia calendar tabs */
+  .kia-tabs { display: flex; background: white; border-radius: 12px; overflow: hidden; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  .kia-tab { flex: 1; padding: 11px; text-align: center; font-size: 14px; cursor: pointer; color: #888; border-bottom: 2px solid transparent; transition: all .2s; }
+  .kia-tab.active { color: #F0691F; border-bottom-color: #F0691F; font-weight: bold; background: #fff8f5; }
+  /* TimeTree calendar */
+  .tt-wrap { background: #1c1c1e; border-radius: 12px; overflow: hidden; margin-bottom: 12px; }
+  .tt-header { padding: 14px 16px 8px; display: flex; justify-content: space-between; align-items: center; }
+  .tt-month { font-size: 18px; font-weight: bold; color: white; }
+  .tt-year { font-size: 12px; color: #888; }
+  .tt-nav { display: flex; gap: 8px; }
+  .tt-nav button { background: #2c2c2e; border: none; color: #aaa; border-radius: 50%; width: 32px; height: 32px; font-size: 16px; cursor: pointer; }
+  .tt-weekdays { display: grid; grid-template-columns: repeat(7,1fr); padding: 0 8px; }
+  .tt-wd { text-align: center; font-size: 11px; color: #555; padding: 4px 0; }
+  .tt-wd.sun { color: #ff453a; } .tt-wd.sat { color: #0a84ff; }
+  .tt-grid { display: grid; grid-template-columns: repeat(7,1fr); padding: 0 8px; gap: 2px; }
+  .tt-day { min-height: 58px; border-radius: 8px; padding: 4px 2px; cursor: pointer; }
+  .tt-day:hover { background: #2c2c2e; }
+  .tt-day.tt-sel { background: #2c2c2e; outline: 1.5px solid #F0691F; }
+  .tt-day.tt-today .tt-dn { background: #F0691F; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; margin: 0 auto 2px; font-size: 11px; }
+  .tt-dn { font-size: 12px; color: #888; text-align: center; margin-bottom: 3px; }
+  .tt-dn.tt-sun { color: #ff453a; } .tt-dn.tt-sat { color: #0a84ff; }
+  .tt-bar { border-radius: 3px; font-size: 9px; padding: 1px 4px; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tt-divider { height: 1px; background: #2c2c2e; margin: 8px 0; }
+  .tt-sheet { background: #2c2c2e; border-radius: 16px 16px 0 0; padding: 12px 16px 16px; }
+  .tt-handle { width: 36px; height: 4px; background: #555; border-radius: 2px; margin: 0 auto 12px; }
+  .tt-sheet-date { font-size: 14px; font-weight: bold; color: white; margin-bottom: 10px; }
+  .tt-ev { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #3a3a3c; }
+  .tt-ev:last-child { border-bottom: none; }
+  .tt-ev-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .tt-ev-name { font-size: 13px; color: white; }
+  .tt-ev-sub { font-size: 11px; color: #888; margin-top: 2px; }
+  .tt-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+  .tt-fab { display: block; width: calc(100% - 32px); margin: 12px 16px 0; padding: 13px; background: #F0691F; color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; }
 </style>
 </head>
 <body>
@@ -112,25 +145,62 @@
       </div>
       <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
     </div>
-    <!-- KM Tracking Card -->
-    <div class="km-card" id="km-card">
-      <div class="km-title">🚗 บันทึกระยะทางวันนี้</div>
-      <div id="km-summary-text"></div>
-      <div class="km-row">
-        <div class="km-field">
-          <label>เลขไมล์ตอนออก (กม.)</label>
-          <input id="km-start" type="number" placeholder="เช่น 12500" />
-        </div>
-        <div class="km-field">
-          <label>เลขไมล์ตอนกลับ (กม.)</label>
-          <input id="km-end" type="number" placeholder="เช่น 12780" />
-        </div>
-      </div>
-      <button class="btn-km" onclick="saveKm()">💾 บันทึกระยะทาง</button>
+    <!-- Kia tab bar (only shown for kia) -->
+    <div class="kia-tabs" id="kia-tabs" style="display:none;">
+      <div class="kia-tab active" id="kia-tab-btn-today" onclick="showKiaTab('today')">📋 วันนี้</div>
+      <div class="kia-tab" id="kia-tab-btn-cal" onclick="showKiaTab('cal')">📅 ปฏิทิน</div>
     </div>
 
-    <div id="delivery-list"></div>
-    <button class="btn-add" onclick="openAddModal()">+ เพิ่มงานส่งเพิ่มเติม</button>
+    <!-- Tab: Today (existing content) -->
+    <div id="kia-tab-today">
+      <!-- KM Tracking Card -->
+      <div class="km-card" id="km-card">
+        <div class="km-title">🚗 บันทึกระยะทางวันนี้</div>
+        <div id="km-summary-text"></div>
+        <div class="km-row">
+          <div class="km-field">
+            <label>เลขไมล์ตอนออก (กม.)</label>
+            <input id="km-start" type="number" placeholder="เช่น 12500" />
+          </div>
+          <div class="km-field">
+            <label>เลขไมล์ตอนกลับ (กม.)</label>
+            <input id="km-end" type="number" placeholder="เช่น 12780" />
+          </div>
+        </div>
+        <button class="btn-km" onclick="saveKm()">💾 บันทึกระยะทาง</button>
+      </div>
+      <div id="delivery-list"></div>
+      <button class="btn-add" onclick="openAddModal()">+ เพิ่มงานส่งเพิ่มเติม</button>
+    </div>
+
+    <!-- Tab: Calendar (kia TimeTree style) -->
+    <div id="kia-tab-cal" style="display:none;">
+      <div class="tt-wrap">
+        <div class="tt-header">
+          <div>
+            <div class="tt-month" id="tt-month-label">มิถุนายน</div>
+            <div class="tt-year" id="tt-year-label">2026</div>
+          </div>
+          <div class="tt-nav">
+            <button onclick="changeKiaCalMonth(-1)">‹</button>
+            <button onclick="changeKiaCalMonth(1)">›</button>
+          </div>
+        </div>
+        <div class="tt-weekdays">
+          <div class="tt-wd sun">อา</div><div class="tt-wd">จ</div><div class="tt-wd">อ</div>
+          <div class="tt-wd">พ</div><div class="tt-wd">พฤ</div><div class="tt-wd">ศ</div>
+          <div class="tt-wd sat">ส</div>
+        </div>
+        <div class="tt-grid" id="tt-grid"></div>
+        <div class="tt-divider"></div>
+        <div class="tt-sheet">
+          <div class="tt-handle"></div>
+          <div class="tt-sheet-date" id="tt-sheet-date">เลือกวันเพื่อดูรายละเอียด</div>
+          <div id="tt-sheet-events"></div>
+        </div>
+      </div>
+      <button class="tt-fab" onclick="openKiaNoteModal()">+ เพิ่มบันทึก / นัดหมาย</button>
+    </div>
   </div>
 </div>
 
@@ -204,7 +274,117 @@
       new Date().toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' })
 
     showPage('page-list')
+
+    const isKia = name === 'kia'
+    document.getElementById('kia-tabs').style.display = isKia ? 'flex' : 'none'
+    if (isKia) showKiaTab('today')
+
     await Promise.all([loadDeliveries(), loadKm()])
+  }
+
+  // ---- Kia tabs ----
+  let kiaCalYear = new Date().getFullYear()
+  let kiaCalMonth = new Date().getMonth()
+  let kiaCalData = []
+  let kiaSelDate = null
+
+  function showKiaTab(tab) {
+    const isToday = tab === 'today'
+    document.getElementById('kia-tab-today').style.display = isToday ? '' : 'none'
+    document.getElementById('kia-tab-cal').style.display = isToday ? 'none' : ''
+    document.getElementById('kia-tab-btn-today').className = 'kia-tab' + (isToday ? ' active' : '')
+    document.getElementById('kia-tab-btn-cal').className = 'kia-tab' + (!isToday ? ' active' : '')
+    if (!isToday) loadKiaCalendar()
+  }
+
+  async function loadKiaCalendar() {
+    const firstDay = kiaCalYear + '-' + String(kiaCalMonth+1).padStart(2,'0') + '-01'
+    const lastDay  = kiaCalYear + '-' + String(kiaCalMonth+1).padStart(2,'0') + '-' +
+      new Date(kiaCalYear, kiaCalMonth+1, 0).getDate()
+    const { data } = await db.from('deliveries').select('*')
+      .eq('driver_name','kia').gte('date', firstDay).lte('date', lastDay)
+    kiaCalData = data || []
+    renderKiaCal()
+  }
+
+  const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+    'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม']
+
+  function renderKiaCal() {
+    document.getElementById('tt-month-label').textContent = TH_MONTHS[kiaCalMonth]
+    document.getElementById('tt-year-label').textContent = kiaCalYear + 543
+    const grid = document.getElementById('tt-grid')
+    grid.innerHTML = ''
+    const firstDow = new Date(kiaCalYear, kiaCalMonth, 1).getDay()
+    const daysInMonth = new Date(kiaCalYear, kiaCalMonth+1, 0).getDate()
+    const todayFull = todayStr
+    for (let i = 0; i < firstDow; i++) grid.appendChild(Object.assign(document.createElement('div'), {className:'tt-day'}))
+    for (let d = 1; d <= daysInMonth; d++) {
+      const ds = kiaCalYear + '-' + String(kiaCalMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0')
+      const dow = new Date(kiaCalYear, kiaCalMonth, d).getDay()
+      const isToday = ds === todayFull
+      const isSel = ds === kiaSelDate
+      const jobs = kiaCalData.filter(x => x.date === ds)
+      const cell = document.createElement('div')
+      cell.className = 'tt-day' + (isToday ? ' tt-today' : '') + (isSel ? ' tt-sel' : '')
+      cell.onclick = () => selectKiaDay(ds)
+      const numDiv = document.createElement('div')
+      numDiv.className = 'tt-dn' + (dow===0?' tt-sun':dow===6?' tt-sat':'')
+      if (isToday) { numDiv.style.cssText=''; numDiv.innerHTML=`<span style="background:#F0691F;color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;margin:0 auto 2px;font-size:11px;">${d}</span>`}
+      else numDiv.textContent = d
+      cell.appendChild(numDiv)
+      const colors = ['#F0691F','#30d158','#0a84ff','#ffd60a','#ff453a']
+      jobs.slice(0,3).forEach((j,i) => {
+        const bar = document.createElement('div')
+        bar.className = 'tt-bar'
+        bar.style.background = colors[i % colors.length]
+        bar.style.color = 'white'
+        bar.textContent = j.customer
+        cell.appendChild(bar)
+      })
+      if (jobs.length > 3) { const m = document.createElement('div'); m.style.cssText='font-size:9px;color:#aaa;text-align:center'; m.textContent='+' + (jobs.length-3); cell.appendChild(m) }
+      grid.appendChild(cell)
+    }
+    if (kiaSelDate) renderKiaDetail(kiaSelDate)
+  }
+
+  function selectKiaDay(ds) {
+    kiaSelDate = ds
+    renderKiaCal()
+  }
+
+  function renderKiaDetail(ds) {
+    const [y,m,d] = ds.split('-')
+    const dt = new Date(+y, +m-1, +d)
+    document.getElementById('tt-sheet-date').textContent =
+      dt.toLocaleDateString('th-TH', { weekday:'long', year:'numeric', month:'long', day:'numeric' })
+    const jobs = kiaCalData.filter(x => x.date === ds)
+    const evDiv = document.getElementById('tt-sheet-events')
+    if (!jobs.length) { evDiv.innerHTML = '<div style="color:#555;font-size:13px;padding:8px 0;">ไม่มีงานวันนี้</div>'; return }
+    const colors = ['#F0691F','#30d158','#0a84ff','#ffd60a','#ff453a']
+    evDiv.innerHTML = jobs.map((j,i) => `
+      <div class="tt-ev">
+        <div class="tt-ev-dot" style="background:${colors[i%colors.length]}"></div>
+        <div>
+          <div class="tt-ev-name">${j.customer}</div>
+          <div class="tt-ev-sub">${j.job_type||'ส่งของ'} ${j.status==='done'?'<span class="tt-badge" style="background:#1c4a2a;color:#30d158;">✓ ส่งแล้ว</span>':'<span class="tt-badge" style="background:#3a2800;color:#ffd60a;">รอส่ง</span>'}</div>
+        </div>
+      </div>`).join('')
+  }
+
+  function changeKiaCalMonth(dir) {
+    kiaCalMonth += dir
+    if (kiaCalMonth < 0) { kiaCalMonth = 11; kiaCalYear-- }
+    if (kiaCalMonth > 11) { kiaCalMonth = 0; kiaCalYear++ }
+    kiaSelDate = null
+    loadKiaCalendar()
+  }
+
+  function openKiaNoteModal() {
+    const ds = kiaSelDate || todayStr
+    const [y,m,d] = ds.split('-')
+    const label = new Date(+y,+m-1,+d).toLocaleDateString('th-TH',{day:'numeric',month:'short'})
+    alert('ฟีเจอร์เพิ่มบันทึกวัน ' + label + ' (สามารถพัฒนาเพิ่มเติมได้)')
   }
 
   async function loadKm() {
