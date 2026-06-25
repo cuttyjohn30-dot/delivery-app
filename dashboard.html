@@ -81,6 +81,27 @@
   .cal-day-num.today-num { background: #F0691F; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; margin-left: auto; font-size: 11px; }
   .cal-badge-done { display: block; background: #dcfce7; color: #166534; border-radius: 6px; font-size: 10px; padding: 2px 5px; margin-top: 2px; text-align: center; }
   .cal-badge-pend { display: block; background: #fff3ee; color: #c0450e; border-radius: 6px; font-size: 10px; padding: 2px 5px; margin-top: 2px; text-align: center; }
+  /* Kia calendar */
+  .kia-cal-header { background: #1A1A1A; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-radius: 12px 12px 0 0; }
+  .kia-stats { display: grid; grid-template-columns: repeat(3,1fr); background: #fafafa; border-bottom: 1px solid #f0f0f0; }
+  .kia-stat { padding: 10px; text-align: center; border-right: 1px solid #f0f0f0; }
+  .kia-stat:last-child { border-right: none; }
+  .kia-stat-n { font-size: 22px; font-weight: bold; }
+  .kia-stat-l { font-size: 11px; color: #888; margin-top: 2px; }
+  .kia-cal-grid { display: grid; grid-template-columns: repeat(7,1fr); }
+  .kia-cal-wh { text-align: center; font-size: 11px; color: #888; padding: 6px 0; background: #f8f9fa; border-bottom: 1px solid #f0f0f0; }
+  .kia-cal-wh.sun { color: #ef4444; } .kia-cal-wh.sat { color: #3b82f6; }
+  .kia-cal-cell { min-height: 54px; padding: 4px 3px; border-right: 1px solid #f5f5f5; border-bottom: 1px solid #f5f5f5; cursor: pointer; vertical-align: top; }
+  .kia-cal-cell:hover { background: #fff3ee; }
+  .kia-cal-cell.kia-sel { background: #fff3ee; outline: 1.5px solid #F0691F; }
+  .kia-cal-cell.kia-empty { background: #fafafa; cursor: default; }
+  .kia-day-num { font-size: 11px; color: #aaa; text-align: right; padding-right: 2px; margin-bottom: 2px; }
+  .kia-day-num.kia-today { background: #F0691F; color: white; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; margin-left: auto; font-size: 10px; }
+  .kia-ev-bar { border-radius: 3px; font-size: 9px; padding: 1px 4px; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kia-detail { padding: 12px 16px; border-top: 1px solid #f0f0f0; }
+  .kia-det-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid #f5f5f5; }
+  .kia-det-row:last-child { border-bottom: none; }
+  .kia-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
   @media (max-width: 600px) {
     .stats-row { grid-template-columns: repeat(2, 1fr); }
     .content { padding: 12px; }
@@ -119,6 +140,7 @@
     <button class="tab-btn" id="tab-all" onclick="setFilter('all')">ทั้งหมด</button>
     <button class="tab-btn" id="tab-custom" onclick="setFilter('custom')">เลือกวัน</button>
     <button class="tab-btn" id="tab-month" onclick="setFilter('month')">📅 รายเดือน</button>
+    <button class="tab-btn" id="tab-kia" onclick="setFilter('kia')">🗓 ตาราง kia</button>
     <input type="date" id="custom-date" style="display:none;" onchange="loadAll()">
   </div>
 
@@ -158,6 +180,39 @@
   </div>
 
   </div><!-- end normal-view -->
+
+  <!-- Kia Calendar View -->
+  <div id="kia-view" style="display:none;">
+    <div style="background:white; border-radius:12px; margin-bottom:16px; box-shadow:0 1px 4px rgba(0,0,0,0.1); overflow:hidden;">
+      <div class="kia-cal-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:34px;height:34px;background:#F0691F;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:16px;">k</div>
+          <div>
+            <div style="font-size:14px;font-weight:bold;color:white;">ตารางงาน kia</div>
+            <div style="font-size:11px;color:#aaa;" id="kia-month-label">-</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="changeKiaMonth(-1)" style="background:#2c2c2e;border:none;color:#aaa;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:16px;">‹</button>
+          <button onclick="changeKiaMonth(1)"  style="background:#2c2c2e;border:none;color:#aaa;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:16px;">›</button>
+        </div>
+      </div>
+      <div class="kia-stats">
+        <div class="kia-stat"><div class="kia-stat-n" id="kia-s-total" style="color:#F0691F;">-</div><div class="kia-stat-l">งานทั้งหมด</div></div>
+        <div class="kia-stat"><div class="kia-stat-n" id="kia-s-done" style="color:#16a34a;">-</div><div class="kia-stat-l">ส่งแล้ว ✅</div></div>
+        <div class="kia-stat"><div class="kia-stat-n" id="kia-s-pend" style="color:#f59e0b;">-</div><div class="kia-stat-l">รอดำเนินการ</div></div>
+      </div>
+      <div class="kia-cal-grid">
+        <div class="kia-cal-wh sun">อา</div><div class="kia-cal-wh">จ</div><div class="kia-cal-wh">อ</div>
+        <div class="kia-cal-wh">พ</div><div class="kia-cal-wh">พฤ</div><div class="kia-cal-wh">ศ</div><div class="kia-cal-wh sat">ส</div>
+      </div>
+      <div class="kia-cal-grid" id="kia-cal-body"></div>
+      <div class="kia-detail">
+        <div style="font-size:13px;font-weight:bold;color:#1A1A1A;margin-bottom:8px;" id="kia-det-title">เลือกวันเพื่อดูรายละเอียด</div>
+        <div id="kia-det-rows"><div style="color:#aaa;font-size:13px;text-align:center;padding:12px;">กดวันในปฏิทินเพื่อดูรายการ</div></div>
+      </div>
+    </div>
+  </div>
 
   <!-- Monthly View -->
   <div id="monthly-view" style="display:none;">
@@ -217,10 +272,13 @@
     document.getElementById('custom-date').style.display = f === 'custom' ? 'inline-block' : 'none'
 
     const isMonth = f === 'month'
+    const isKia   = f === 'kia'
     document.getElementById('monthly-view').style.display = isMonth ? 'block' : 'none'
-    document.getElementById('normal-view').style.display = isMonth ? 'none' : 'block'
+    document.getElementById('kia-view').style.display     = isKia   ? 'block' : 'none'
+    document.getElementById('normal-view').style.display  = (!isMonth && !isKia) ? 'block' : 'none'
 
     if (isMonth) loadMonthly()
+    else if (isKia) loadKiaCalendar()
     else loadAll()
   }
 
@@ -558,6 +616,91 @@
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Deliveries')
     XLSX.writeFile(wb, filename + '.xlsx')
+  }
+
+  let kiaMonthDate = new Date()
+  let kiaSelDate = null
+  let kiaData = []
+
+  function changeKiaMonth(dir) {
+    kiaMonthDate = new Date(kiaMonthDate.getFullYear(), kiaMonthDate.getMonth() + dir, 1)
+    loadKiaCalendar()
+  }
+
+  async function loadKiaCalendar() {
+    const y = kiaMonthDate.getFullYear()
+    const m = kiaMonthDate.getMonth()
+    const firstDay = `${y}-${String(m+1).padStart(2,'0')}-01`
+    const lastDay  = `${y}-${String(m+1).padStart(2,'0')}-${new Date(y,m+1,0).getDate()}`
+    const MN = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม']
+
+    document.getElementById('kia-month-label').textContent = MN[m] + ' ' + (y + 543)
+
+    const { data } = await db.from('deliveries').select('*')
+      .eq('driver_name', 'kia').gte('date', firstDay).lte('date', lastDay)
+    kiaData = data || []
+
+    const total = kiaData.length
+    const done  = kiaData.filter(d => d.status === 'done').length
+    document.getElementById('kia-s-total').textContent = total
+    document.getElementById('kia-s-done').textContent  = done
+    document.getElementById('kia-s-pend').textContent  = total - done
+
+    const byDate = {}
+    kiaData.forEach(d => {
+      if (!byDate[d.date]) byDate[d.date] = []
+      byDate[d.date].push(d)
+    })
+
+    const days = new Date(y, m+1, 0).getDate()
+    const startDow = new Date(y, m, 1).getDay()
+    let html = ''
+    for (let i = 0; i < startDow; i++) html += '<div class="kia-cal-cell kia-empty"></div>'
+
+    for (let day = 1; day <= days; day++) {
+      const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+      const isToday = ds === todayStr
+      const isSel   = ds === kiaSelDate
+      const evs = byDate[ds] || []
+      const dow = new Date(y, m, day).getDay()
+      const nc  = dow === 0 ? '#ef4444' : dow === 6 ? '#3b82f6' : '#aaa'
+      const numHtml = isToday
+        ? `<div class="kia-day-num"><div class="kia-today">${day}</div></div>`
+        : `<div class="kia-day-num" style="color:${nc};">${day}</div>`
+      const bars = evs.slice(0,2).map(e => {
+        const bg = e.status==='done' ? '#dcfce7' : '#fff3ee'
+        const tc = e.status==='done' ? '#166534' : '#c0450e'
+        return `<div class="kia-ev-bar" style="background:${bg};color:${tc};">${e.customer.split(' ')[0]}</div>`
+      }).join('')
+      const more = evs.length > 2 ? `<div style="font-size:9px;color:#aaa;text-align:right;">+${evs.length-2}</div>` : ''
+      html += `<div class="kia-cal-cell${isSel?' kia-sel':''}" onclick="selectKiaDay('${ds}')">${numHtml}${bars}${more}</div>`
+    }
+    document.getElementById('kia-cal-body').innerHTML = html
+    if (kiaSelDate) renderKiaDet()
+  }
+
+  function selectKiaDay(ds) {
+    kiaSelDate = ds
+    document.querySelectorAll('.kia-cal-cell').forEach(c => c.classList.remove('kia-sel'))
+    loadKiaCalendar()
+  }
+
+  function renderKiaDet() {
+    if (!kiaSelDate) return
+    const MN = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม']
+    const WD = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์']
+    const dt = new Date(kiaSelDate)
+    document.getElementById('kia-det-title').textContent =
+      dt.getDate() + ' ' + MN[dt.getMonth()] + ' ' + (dt.getFullYear()+543) + ' · ' + WD[dt.getDay()]
+    const evs = kiaData.filter(d => d.date === kiaSelDate)
+    document.getElementById('kia-det-rows').innerHTML = evs.length
+      ? evs.map(e => `<div class="kia-det-row">
+          <div class="kia-dot" style="background:${e.status==='done'?'#16a34a':e.arrived_at?'#7c3aed':'#F0691F'};"></div>
+          <div style="flex:1;font-size:13px;">${e.customer}</div>
+          <div style="font-size:12px;color:#666;">${e.job_type||'-'}</div>
+          <span class="badge ${e.status==='done'?'badge-done':e.arrived_at?'badge-arrive':'badge-pending'}">${e.status==='done'?'✅ ส่งแล้ว':e.arrived_at?'📍 ถึงแล้ว':'⏳ รอ'}</span>
+        </div>`).join('')
+      : '<div style="color:#aaa;font-size:13px;text-align:center;padding:12px;">ไม่มีงานวันนี้</div>'
   }
 
   loadAll()
