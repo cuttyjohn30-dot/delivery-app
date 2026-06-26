@@ -212,6 +212,25 @@
   </div>
 </div>
 
+<!-- Modal เพิ่มตารางงาน kia -->
+<div class="modal-overlay" id="kia-cal-overlay" onclick="closeKiaCalModal()"></div>
+<div class="modal" id="kia-cal-modal">
+  <div class="modal-handle"></div>
+  <div class="modal-title">📅 เพิ่มตารางงาน kia</div>
+  <label>วันที่</label>
+  <input id="kia-cal-date" type="date" />
+  <label>ชื่อลูกค้า / งาน *</label>
+  <input id="kia-cal-customer" type="text" placeholder="เช่น Skanem, IS Visit" />
+  <label>ประเภทงาน</label>
+  <div id="kia-cal-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>
+  <label>หมายเหตุ</label>
+  <input id="kia-cal-notes" type="text" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" />
+  <div class="btn-row">
+    <button class="btn-cancel" onclick="closeKiaCalModal()">ยกเลิก</button>
+    <button class="btn-submit" onclick="saveKiaCalEvent()">บันทึก ✅</button>
+  </div>
+</div>
+
 <!-- Modal เพิ่มงาน -->
 <div class="modal-overlay" id="overlay" onclick="closeAddModal()"></div>
 <div class="modal" id="add-modal">
@@ -388,11 +407,57 @@
     loadKiaCalendar()
   }
 
+  let kiaCalSelectedTypes = new Set()
+
   function openKiaNoteModal() {
     const ds = kiaSelDate || todayStr
-    const [y,m,d] = ds.split('-')
-    const label = new Date(+y,+m-1,+d).toLocaleDateString('th-TH',{day:'numeric',month:'short'})
-    alert('ฟีเจอร์เพิ่มบันทึกวัน ' + label + ' (สามารถพัฒนาเพิ่มเติมได้)')
+    document.getElementById('kia-cal-date').value = ds
+    document.getElementById('kia-cal-customer').value = ''
+    document.getElementById('kia-cal-notes').value = ''
+    kiaCalSelectedTypes = new Set()
+    renderKiaCalChips()
+    document.getElementById('kia-cal-modal').style.display = 'block'
+    document.getElementById('kia-cal-overlay').style.display = 'block'
+    setTimeout(() => document.getElementById('kia-cal-customer').focus(), 100)
+  }
+
+  function closeKiaCalModal() {
+    document.getElementById('kia-cal-modal').style.display = 'none'
+    document.getElementById('kia-cal-overlay').style.display = 'none'
+  }
+
+  function renderKiaCalChips() {
+    const container = document.getElementById('kia-cal-chips')
+    container.innerHTML = JOB_TYPES.map(t => `
+      <div class="chip ${kiaCalSelectedTypes.has(t) ? 'chip-active' : ''}" onclick="toggleKiaCalType('${t}')">${t}</div>
+    `).join('')
+  }
+
+  function toggleKiaCalType(t) {
+    if (kiaCalSelectedTypes.has(t)) kiaCalSelectedTypes.delete(t)
+    else kiaCalSelectedTypes.add(t)
+    renderKiaCalChips()
+  }
+
+  async function saveKiaCalEvent() {
+    const date = document.getElementById('kia-cal-date').value
+    const customer = document.getElementById('kia-cal-customer').value.trim()
+    const notes = document.getElementById('kia-cal-notes').value.trim()
+    if (!date) { showToast('กรุณาเลือกวันที่', '#ef4444'); return }
+    if (!customer) { showToast('กรุณาใส่ชื่อลูกค้า/งาน', '#ef4444'); return }
+    const jobType = [...kiaCalSelectedTypes].join(', ') || 'ส่งของ'
+    const { error } = await db.from('deliveries').insert({
+      date, customer, driver_name: 'kia', job_type: jobType,
+      notes: notes || null, status: 'pending', added_by: 'driver'
+    })
+    if (error) { showToast('เกิดข้อผิดพลาด: ' + error.message, '#ef4444'); return }
+    showToast('✅ เพิ่มตารางงานแล้ว')
+    closeKiaCalModal()
+    // รีเฟรชเดือนที่แสดงอยู่
+    const [y, m] = date.split('-')
+    kiaCalYear = +y; kiaCalMonth = +m - 1
+    kiaSelDate = date
+    await loadKiaCalendar()
   }
 
   async function loadKm() {
