@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Generate Dashboard Icons</title></head>
+<body style="font-family:sans-serif;padding:20px;background:#111;color:white;">
+<h2>PSG Dashboard Icon Generator</h2>
+<canvas id="c192" width="192" height="192" style="border:1px solid #333;margin:8px;"></canvas>
+<canvas id="c512" width="512" height="512" style="border:1px solid #333;margin:8px;"></canvas>
+<br><br>
+<button onclick="download()" style="padding:12px 24px;background:#F0691F;color:white;border:none;border-radius:8px;font-size:16px;cursor:pointer;">⬇ Download Icons</button>
+<p id="status" style="color:#aaa;margin-top:12px;"></p>
+<script>
+function drawIcon(canvas) {
+  const s = canvas.width
+  const ctx = canvas.getContext('2d')
+  ctx.fillStyle = '#1A1A1A'
+  roundRect(ctx, 0, 0, s, s, s * 0.18)
+  ctx.fill()
+  // top bar
+  ctx.fillStyle = '#F0691F'
+  roundRect(ctx, s*0.08, s*0.07, s*0.84, s*0.075, s*0.03)
+  ctx.fill()
+  // PSG text
+  ctx.fillStyle = '#F0691F'
+  ctx.font = `bold ${s*0.26}px Arial`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText('PSG', s/2, s*0.40)
+  // DASHBOARD text
+  ctx.fillStyle = '#ffffff'
+  ctx.font = `bold ${s*0.11}px Arial`
+  ctx.fillText('DASHBOARD', s/2, s*0.58)
+  // EXPRESS text
+  ctx.fillStyle = '#F0691F'
+  ctx.font = `bold ${s*0.09}px Arial`
+  ctx.fillText('EXPRESS', s/2, s*0.69)
+  // speedometer arc
+  const cx = s/2, cy = s*0.82, r = s*0.10
+  ctx.strokeStyle = '#333'
+  ctx.lineWidth = s*0.035
+  ctx.lineCap = 'round'
+  ctx.beginPath()
+  ctx.arc(cx, cy, r, Math.PI, 0)
+  ctx.stroke()
+  ctx.strokeStyle = '#F0691F'
+  ctx.beginPath()
+  ctx.arc(cx, cy, r, Math.PI, Math.PI*1.65)
+  ctx.stroke()
+  ctx.fillStyle = '#F0691F'
+  ctx.beginPath()
+  ctx.arc(cx, cy, s*0.022, 0, Math.PI*2)
+  ctx.fill()
+  // bottom bar
+  ctx.fillStyle = '#F0691F'
+  roundRect(ctx, s*0.08, s*0.91, s*0.84, s*0.055, s*0.02)
+  ctx.fill()
+}
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath()
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y)
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r)
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h)
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r)
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y)
+  ctx.closePath()
+}
+drawIcon(document.getElementById('c192'))
+drawIcon(document.getElementById('c512'))
+function download() {
+  const a = document.createElement('a')
+  a.href = document.getElementById('c192').toDataURL('image/png')
+  a.download = 'dash-icon-192.png'; a.click()
+  setTimeout(() => {
+    const b = document.createElement('a')
+    b.href = document.getElementById('c512').toDataURL('image/png')
+    b.download = 'dash-icon-512.png'; b.click()
+    document.getElementById('status').textContent = '✅ ดาวน์โหลด dash-icon-192.png และ dash-icon-512.png แล้ว — ย้ายไปไว้ใน folder delivery-app ได้เลย'
+  }, 500)
+}
+</script>
+</body>
+</html>
