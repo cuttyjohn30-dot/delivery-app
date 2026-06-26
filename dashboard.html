@@ -215,7 +215,10 @@
       </div>
       <div class="kia-cal-grid" id="kia-cal-body"></div>
       <div class="kia-detail">
-        <div style="font-size:13px;font-weight:bold;color:#1A1A1A;margin-bottom:8px;" id="kia-det-title">เลือกวันเพื่อดูรายละเอียด</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-size:13px;font-weight:bold;color:#1A1A1A;" id="kia-det-title">เลือกวันเพื่อดูรายละเอียด</div>
+          <button onclick="openDashKiaModal()" style="background:#F0691F;color:white;border:none;border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;font-weight:bold;">+ เพิ่มงาน</button>
+        </div>
         <div id="kia-det-rows"><div style="color:#aaa;font-size:13px;text-align:center;padding:12px;">กดวันในปฏิทินเพื่อดูรายการ</div></div>
       </div>
     </div>
@@ -248,6 +251,25 @@
     <div class="card-title">🚗 สรุประยะทาง (กม.)</div>
     <div id="km-section"><div class="loading">กำลังโหลด...</div></div>
   </div>
+
+<!-- Modal เพิ่มงาน kia (dashboard) -->
+<div class="modal-overlay" id="dash-kia-overlay" onclick="closeDashKiaModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;"></div>
+<div id="dash-kia-modal" style="display:none;position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;background:white;border-radius:20px 20px 0 0;padding:20px;z-index:1000;box-shadow:0 -4px 20px rgba(0,0,0,0.15);">
+  <div style="width:36px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 16px;"></div>
+  <div style="font-size:16px;font-weight:bold;margin-bottom:16px;color:#1A1A1A;">📅 เพิ่มตารางงาน kia</div>
+  <label style="font-size:13px;font-weight:bold;color:#555;display:block;margin-bottom:4px;">วันที่</label>
+  <input id="dkia-date" type="date" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:12px;" />
+  <label style="font-size:13px;font-weight:bold;color:#555;display:block;margin-bottom:4px;">ชื่อลูกค้า / งาน *</label>
+  <input id="dkia-customer" type="text" placeholder="เช่น Skanem, IS Visit" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:12px;" />
+  <label style="font-size:13px;font-weight:bold;color:#555;display:block;margin-bottom:4px;">ประเภทงาน</label>
+  <div id="dkia-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>
+  <label style="font-size:13px;font-weight:bold;color:#555;display:block;margin-bottom:4px;">หมายเหตุ</label>
+  <input id="dkia-notes" type="text" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:16px;" />
+  <div style="display:flex;gap:10px;">
+    <button onclick="closeDashKiaModal()" style="flex:1;padding:12px;border:1px solid #d1d5db;background:white;border-radius:10px;font-size:14px;cursor:pointer;">ยกเลิก</button>
+    <button onclick="saveDashKiaEvent()" style="flex:2;padding:12px;background:#F0691F;color:white;border:none;border-radius:10px;font-size:14px;font-weight:bold;cursor:pointer;">บันทึก ✅</button>
+  </div>
+</div>
 
 <!-- Modal คนขับ -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal()"></div>
@@ -706,8 +728,67 @@
           <div style="flex:1;font-size:13px;">${e.customer}</div>
           <div style="font-size:12px;color:#666;">${e.job_type||'-'}</div>
           <span class="badge ${e.status==='done'?'badge-done':e.arrived_at?'badge-arrive':'badge-pending'}">${e.status==='done'?'✅ ส่งแล้ว':e.arrived_at?'📍 ถึงแล้ว':'⏳ รอ'}</span>
+          <button onclick="deleteDashKiaEvent(${e.id})" style="background:none;border:1px solid #ef444455;color:#ef4444;border-radius:6px;padding:2px 7px;font-size:12px;cursor:pointer;margin-left:4px;">🗑</button>
         </div>`).join('')
       : '<div style="color:#aaa;font-size:13px;text-align:center;padding:12px;">ไม่มีงานวันนี้</div>'
+  }
+
+  // ---- Dashboard kia modal ----
+  const DASH_JOB_TYPES = ['ส่งของ','รับของ','นับ Consignment','IS Visit']
+  let dashKiaSelectedTypes = new Set()
+
+  function openDashKiaModal() {
+    document.getElementById('dkia-date').value = kiaSelDate || todayStr
+    document.getElementById('dkia-customer').value = ''
+    document.getElementById('dkia-notes').value = ''
+    dashKiaSelectedTypes = new Set()
+    renderDashKiaChips()
+    document.getElementById('dash-kia-overlay').style.display = 'block'
+    document.getElementById('dash-kia-modal').style.display = 'block'
+    setTimeout(() => document.getElementById('dkia-customer').focus(), 100)
+  }
+
+  function closeDashKiaModal() {
+    document.getElementById('dash-kia-overlay').style.display = 'none'
+    document.getElementById('dash-kia-modal').style.display = 'none'
+  }
+
+  function renderDashKiaChips() {
+    document.getElementById('dkia-chips').innerHTML = DASH_JOB_TYPES.map(t => `
+      <div onclick="toggleDashKiaType('${t}')" style="padding:6px 14px;border-radius:20px;border:1.5px solid ${dashKiaSelectedTypes.has(t)?'#F0691F':'#d1d5db'};background:${dashKiaSelectedTypes.has(t)?'#fff3ee':'white'};color:${dashKiaSelectedTypes.has(t)?'#F0691F':'#555'};font-size:13px;cursor:pointer;">${t}</div>
+    `).join('')
+  }
+
+  function toggleDashKiaType(t) {
+    if (dashKiaSelectedTypes.has(t)) dashKiaSelectedTypes.delete(t)
+    else dashKiaSelectedTypes.add(t)
+    renderDashKiaChips()
+  }
+
+  async function saveDashKiaEvent() {
+    const date = document.getElementById('dkia-date').value
+    const customer = document.getElementById('dkia-customer').value.trim()
+    const notes = document.getElementById('dkia-notes').value.trim()
+    if (!date) { alert('กรุณาเลือกวันที่'); return }
+    if (!customer) { alert('กรุณาใส่ชื่อลูกค้า/งาน'); return }
+    const jobType = [...dashKiaSelectedTypes].join(', ') || 'ส่งของ'
+    const { error } = await db.from('deliveries').insert({
+      date, customer, driver_name: 'kia', job_type: jobType,
+      notes: notes || null, status: 'pending', added_by: 'driver'
+    })
+    if (error) { alert('เกิดข้อผิดพลาด: ' + error.message); return }
+    closeDashKiaModal()
+    const [y, m] = date.split('-')
+    kiaMonthDate = new Date(+y, +m-1, 1)
+    kiaSelDate = date
+    await loadKiaCalendar()
+  }
+
+  async function deleteDashKiaEvent(id) {
+    if (!confirm('ลบรายการนี้?')) return
+    const { error } = await db.from('deliveries').delete().eq('id', id)
+    if (error) { alert('เกิดข้อผิดพลาด: ' + error.message); return }
+    await loadKiaCalendar()
   }
 
   loadAll()
