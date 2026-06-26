@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Generate Icons</title></head>
+<body style="font-family:sans-serif;padding:20px;background:#111;color:white;">
+<h2>PSGExpress Icon Generator</h2>
+<canvas id="c192" width="192" height="192" style="border:1px solid #333;margin:8px;"></canvas>
+<canvas id="c512" width="512" height="512" style="border:1px solid #333;margin:8px;"></canvas>
+<br><br>
+<button onclick="download()" style="padding:12px 24px;background:#F0691F;color:white;border:none;border-radius:8px;font-size:16px;cursor:pointer;">⬇ Download Icons</button>
+<p id="status" style="color:#aaa;margin-top:12px;"></p>
+<script>
+function drawIcon(canvas) {
+  const s = canvas.width
+  const ctx = canvas.getContext('2d')
+  // Background
+  ctx.fillStyle = '#1A1A1A'
+  roundRect(ctx, 0, 0, s, s, s * 0.18)
+  ctx.fill()
+  // Orange accent bar top
+  ctx.fillStyle = '#F0691F'
+  roundRect(ctx, s*0.08, s*0.07, s*0.84, s*0.08, s*0.03)
+  ctx.fill()
+  // PSG text
+  ctx.fillStyle = '#F0691F'
+  ctx.font = `bold ${s*0.28}px Arial`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText('PSG', s/2, s*0.46)
+  // Express text
+  ctx.fillStyle = '#ffffff'
+  ctx.font = `bold ${s*0.13}px Arial`
+  ctx.fillText('EXPRESS', s/2, s*0.68)
+  // Orange accent bar bottom
+  ctx.fillStyle = '#F0691F'
+  roundRect(ctx, s*0.08, s*0.83, s*0.84, s*0.06, s*0.02)
+  ctx.fill()
+}
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath()
+  ctx.moveTo(x+r, y)
+  ctx.lineTo(x+w-r, y)
+  ctx.quadraticCurveTo(x+w, y, x+w, y+r)
+  ctx.lineTo(x+w, y+h-r)
+  ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h)
+  ctx.lineTo(x+r, y+h)
+  ctx.quadraticCurveTo(x, y+h, x, y+h-r)
+  ctx.lineTo(x, y+r)
+  ctx.quadraticCurveTo(x, y, x+r, y)
+  ctx.closePath()
+}
+drawIcon(document.getElementById('c192'))
+drawIcon(document.getElementById('c512'))
+function download() {
+  const a = document.createElement('a')
+  a.href = document.getElementById('c192').toDataURL('image/png')
+  a.download = 'icon-192.png'
+  a.click()
+  setTimeout(() => {
+    const b = document.createElement('a')
+    b.href = document.getElementById('c512').toDataURL('image/png')
+    b.download = 'icon-512.png'
+    b.click()
+    document.getElementById('status').textContent = '✅ ดาวน์โหลด icon-192.png และ icon-512.png แล้ว — ย้ายไปไว้ใน folder delivery-app ได้เลย'
+  }, 500)
+}
+</script>
+</body>
+</html>
