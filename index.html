@@ -42,6 +42,7 @@
   .btn-confirm { background: #F0691F; color: white; border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; font-size: 13px; font-weight: bold; white-space: nowrap; }
   .btn-confirm:active { opacity: .8; }
   .btn-add { width: 100%; background: #F0691F; color: white; border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: bold; cursor: pointer; margin-bottom: 80px; }
+  .btn-delete { background: none; border: 1px solid #ef444455; color: #ef4444; border-radius: 8px; padding: 4px 8px; font-size: 14px; cursor: pointer; }
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 199; }
   .modal { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 20px 20px 0 0; padding: 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.15); z-index: 200; max-width: 480px; margin: 0 auto; }
   .modal-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 16px; }
@@ -498,7 +499,10 @@
             ${notesInfo}
             ${d.status === 'done' ? `<div class="done-time">✅ ส่งแล้ว ${formatTime(d.done_at)}</div>` : ''}
           </div>
-          ${actionBtn}
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+            ${actionBtn}
+            <button class="btn-delete" onclick="deleteDelivery(${d.id})" title="ลบรายการ">🗑</button>
+          </div>
         </div>`
     }
 
@@ -525,6 +529,14 @@
     }
 
     document.getElementById('delivery-list').innerHTML = html
+  }
+
+  async function deleteDelivery(id) {
+    if (!confirm('ลบรายการนี้ออก?')) return
+    const { error } = await db.from('deliveries').delete().eq('id', id)
+    if (error) { showToast('เกิดข้อผิดพลาด: ' + error.message, '#ef4444'); return }
+    showToast('🗑 ลบรายการแล้ว')
+    await loadDeliveries()
   }
 
   async function arriveDelivery(id) {
