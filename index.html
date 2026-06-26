@@ -223,6 +223,8 @@
   <input id="kia-cal-customer" type="text" placeholder="เช่น Skanem, IS Visit" />
   <label>ประเภทงาน</label>
   <div id="kia-cal-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>
+  <label>เวลานัด (ถ้ามี)</label>
+  <input id="kia-cal-time" type="time" style="margin-bottom:12px;" />
   <label>หมายเหตุ</label>
   <input id="kia-cal-notes" type="text" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" />
   <div class="btn-row">
@@ -366,7 +368,7 @@
         bar.className = 'tt-bar'
         bar.style.background = colors[i % colors.length]
         bar.style.color = 'white'
-        bar.textContent = j.customer
+        bar.textContent = (j.scheduled_time ? j.scheduled_time.slice(0,5) + ' ' : '') + j.customer
         cell.appendChild(bar)
       })
       if (jobs.length > 3) { const m = document.createElement('div'); m.style.cssText='font-size:9px;color:#aaa;text-align:center'; m.textContent='+' + (jobs.length-3); cell.appendChild(m) }
@@ -393,7 +395,7 @@
       <div class="tt-ev">
         <div class="tt-ev-dot" style="background:${colors[i%colors.length]}"></div>
         <div>
-          <div class="tt-ev-name">${j.customer}</div>
+          <div class="tt-ev-name">${j.scheduled_time ? '<span style="color:#F0691F;font-size:12px;margin-right:4px;">🕐 ' + j.scheduled_time.slice(0,5) + '</span>' : ''}${j.customer}</div>
           <div class="tt-ev-sub">${j.job_type||'ส่งของ'} ${j.status==='done'?'<span class="tt-badge" style="background:#1c4a2a;color:#30d158;">✓ ส่งแล้ว</span>':'<span class="tt-badge" style="background:#3a2800;color:#ffd60a;">รอส่ง</span>'}</div>
         </div>
       </div>`).join('')
@@ -414,6 +416,7 @@
     document.getElementById('kia-cal-date').value = ds
     document.getElementById('kia-cal-customer').value = ''
     document.getElementById('kia-cal-notes').value = ''
+    document.getElementById('kia-cal-time').value = ''
     kiaCalSelectedTypes = new Set()
     renderKiaCalChips()
     document.getElementById('kia-cal-modal').style.display = 'block'
@@ -445,10 +448,12 @@
     const notes = document.getElementById('kia-cal-notes').value.trim()
     if (!date) { showToast('กรุณาเลือกวันที่', '#ef4444'); return }
     if (!customer) { showToast('กรุณาใส่ชื่อลูกค้า/งาน', '#ef4444'); return }
+    const scheduledTime = document.getElementById('kia-cal-time').value
     const jobType = [...kiaCalSelectedTypes].join(', ') || 'ส่งของ'
     const { error } = await db.from('deliveries').insert({
       date, customer, driver_name: 'kia', job_type: jobType,
-      notes: notes || null, status: 'pending', added_by: 'driver'
+      notes: notes || null, status: 'pending', added_by: 'driver',
+      scheduled_time: scheduledTime || null
     })
     if (error) { showToast('เกิดข้อผิดพลาด: ' + error.message, '#ef4444'); return }
     showToast('✅ เพิ่มตารางงานแล้ว')

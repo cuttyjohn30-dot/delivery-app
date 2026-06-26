@@ -263,6 +263,8 @@
   <input id="dkia-customer" type="text" placeholder="เช่น Skanem, IS Visit" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:12px;" />
   <label style="font-size:13px;font-weight:bold;color:#555;display:block;margin-bottom:4px;">ประเภทงาน</label>
   <div id="dkia-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>
+  <label style="font-size:13px;font-weight:bold;color:#555;display:block;margin-bottom:4px;">เวลานัด (ถ้ามี)</label>
+  <input id="dkia-time" type="time" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:12px;" />
   <label style="font-size:13px;font-weight:bold;color:#555;display:block;margin-bottom:4px;">หมายเหตุ</label>
   <input id="dkia-notes" type="text" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:16px;" />
   <div style="display:flex;gap:10px;">
@@ -699,7 +701,7 @@
       const bars = evs.slice(0,2).map(e => {
         const bg = e.status==='done' ? '#dcfce7' : '#fff3ee'
         const tc = e.status==='done' ? '#166534' : '#c0450e'
-        return `<div class="kia-ev-bar" style="background:${bg};color:${tc};">${e.customer.split(' ')[0]}</div>`
+        return `<div class="kia-ev-bar" style="background:${bg};color:${tc};">${e.scheduled_time?e.scheduled_time.slice(0,5)+' ':''}${e.customer.split(' ')[0]}</div>`
       }).join('')
       const more = evs.length > 2 ? `<div style="font-size:9px;color:#aaa;text-align:right;">+${evs.length-2}</div>` : ''
       html += `<div class="kia-cal-cell${isSel?' kia-sel':''}" onclick="selectKiaDay('${ds}')">${numHtml}${bars}${more}</div>`
@@ -725,7 +727,7 @@
     document.getElementById('kia-det-rows').innerHTML = evs.length
       ? evs.map(e => `<div class="kia-det-row">
           <div class="kia-dot" style="background:${e.status==='done'?'#16a34a':e.arrived_at?'#7c3aed':'#F0691F'};"></div>
-          <div style="flex:1;font-size:13px;">${e.customer}</div>
+          <div style="flex:1;font-size:13px;">${e.scheduled_time?'<span style="color:#F0691F;font-size:11px;margin-right:4px;">🕐 '+e.scheduled_time.slice(0,5)+'</span>':''}${e.customer}</div>
           <div style="font-size:12px;color:#666;">${e.job_type||'-'}</div>
           <span class="badge ${e.status==='done'?'badge-done':e.arrived_at?'badge-arrive':'badge-pending'}">${e.status==='done'?'✅ ส่งแล้ว':e.arrived_at?'📍 ถึงแล้ว':'⏳ รอ'}</span>
           <button onclick="deleteDashKiaEvent(${e.id})" style="background:none;border:1px solid #ef444455;color:#ef4444;border-radius:6px;padding:2px 7px;font-size:12px;cursor:pointer;margin-left:4px;">🗑</button>
@@ -741,6 +743,7 @@
     document.getElementById('dkia-date').value = kiaSelDate || todayStr
     document.getElementById('dkia-customer').value = ''
     document.getElementById('dkia-notes').value = ''
+    document.getElementById('dkia-time').value = ''
     dashKiaSelectedTypes = new Set()
     renderDashKiaChips()
     document.getElementById('dash-kia-overlay').style.display = 'block'
@@ -771,10 +774,12 @@
     const notes = document.getElementById('dkia-notes').value.trim()
     if (!date) { alert('กรุณาเลือกวันที่'); return }
     if (!customer) { alert('กรุณาใส่ชื่อลูกค้า/งาน'); return }
+    const scheduledTime = document.getElementById('dkia-time').value
     const jobType = [...dashKiaSelectedTypes].join(', ') || 'ส่งของ'
     const { error } = await db.from('deliveries').insert({
       date, customer, driver_name: 'kia', job_type: jobType,
-      notes: notes || null, status: 'pending', added_by: 'driver'
+      notes: notes || null, status: 'pending', added_by: 'driver',
+      scheduled_time: scheduledTime || null
     })
     if (error) { alert('เกิดข้อผิดพลาด: ' + error.message); return }
     closeDashKiaModal()
