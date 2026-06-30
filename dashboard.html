@@ -777,7 +777,7 @@
     const scheduledTime = document.getElementById('dkia-time').value
     const jobType = [...dashKiaSelectedTypes].join(', ') || 'ส่งของ'
     const { error } = await db.from('deliveries').insert({
-      date, customer, driver_name: 'kia', job_type: jobType,
+      date, customer, driver: 'kia', driver_name: 'kia', job_type: jobType,
       notes: notes || null, status: 'pending', added_by: 'driver',
       scheduled_time: scheduledTime || null
     })
