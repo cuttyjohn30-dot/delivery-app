@@ -392,13 +392,24 @@
     if (!jobs.length) { evDiv.innerHTML = '<div style="color:#555;font-size:13px;padding:8px 0;">ไม่มีงานวันนี้</div>'; return }
     const colors = ['#F0691F','#30d158','#0a84ff','#ffd60a','#ff453a']
     evDiv.innerHTML = jobs.map((j,i) => `
-      <div class="tt-ev">
-        <div class="tt-ev-dot" style="background:${colors[i%colors.length]}"></div>
-        <div>
-          <div class="tt-ev-name">${j.scheduled_time ? '<span style="color:#F0691F;font-size:12px;margin-right:4px;">🕐 ' + j.scheduled_time.slice(0,5) + '</span>' : ''}${j.customer}</div>
-          <div class="tt-ev-sub">${j.job_type||'ส่งของ'} ${j.status==='done'?'<span class="tt-badge" style="background:#1c4a2a;color:#30d158;">✓ ส่งแล้ว</span>':'<span class="tt-badge" style="background:#3a2800;color:#ffd60a;">รอส่ง</span>'}</div>
+      <div class="tt-ev" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+          <div class="tt-ev-dot" style="background:${colors[i%colors.length]};flex-shrink:0;"></div>
+          <div style="min-width:0;">
+            <div class="tt-ev-name">${j.scheduled_time ? '<span style="color:#F0691F;font-size:12px;margin-right:4px;">🕐 ' + j.scheduled_time.slice(0,5) + '</span>' : ''}${j.customer}</div>
+            <div class="tt-ev-sub">${j.job_type||'ส่งของ'} ${j.status==='done'?'<span class="tt-badge" style="background:#1c4a2a;color:#30d158;">✓ ส่งแล้ว</span>':'<span class="tt-badge" style="background:#3a2800;color:#ffd60a;">รอส่ง</span>'}</div>
+          </div>
         </div>
+        <button onclick="deleteKiaCalEvent(${j.id})" style="background:none;border:1px solid #ef444466;color:#ef4444;border-radius:6px;padding:3px 8px;font-size:13px;cursor:pointer;flex-shrink:0;margin-left:8px;">🗑</button>
       </div>`).join('')
+  }
+
+  async function deleteKiaCalEvent(id) {
+    if (!confirm('ลบรายการนี้?')) return
+    const { error } = await db.from('deliveries').delete().eq('id', id)
+    if (error) { showToast('เกิดข้อผิดพลาด: ' + error.message, '#ef4444'); return }
+    showToast('🗑 ลบรายการแล้ว')
+    await loadKiaCalendar()
   }
 
   function changeKiaCalMonth(dir) {
