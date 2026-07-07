@@ -440,11 +440,18 @@
     document.getElementById('kia-cal-overlay').style.display = 'none'
   }
 
+  const KIA_JOB_TYPES = ['ส่งของ','รับของ','ส่งของ+รับของ','เก็บเงิน','นับ Consignment','IS Visit','อื่นๆ','ด่วน!!!!']
+
   function renderKiaCalChips() {
     const container = document.getElementById('kia-cal-chips')
-    container.innerHTML = JOB_TYPES.map(t => `
-      <div class="chip ${kiaCalSelectedTypes.has(t) ? 'chip-active' : ''}" onclick="toggleKiaCalType('${t}')">${t}</div>
-    `).join('')
+    container.innerHTML = KIA_JOB_TYPES.map(t => {
+      const isUrgent = t === 'ด่วน!!!!'
+      const active = kiaCalSelectedTypes.has(t)
+      const style = isUrgent
+        ? `background:${active?'#ef4444':'#fef2f2'};color:${active?'white':'#ef4444'};border:1.5px solid #ef4444;font-weight:bold;`
+        : ''
+      return `<div class="chip ${active ? 'chip-active' : ''}" style="${style}" onclick="toggleKiaCalType('${t}')">${t}</div>`
+    }).join('')
   }
 
   function toggleKiaCalType(t) {

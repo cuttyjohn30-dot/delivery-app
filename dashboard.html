@@ -736,7 +736,7 @@
   }
 
   // ---- Dashboard kia modal ----
-  const DASH_JOB_TYPES = ['ส่งของ','รับของ','ส่งของ+รับของ','เก็บเงิน','นับ Consignment','IS Visit','อื่นๆ']
+  const DASH_JOB_TYPES = ['ส่งของ','รับของ','ส่งของ+รับของ','เก็บเงิน','นับ Consignment','IS Visit','อื่นๆ','ด่วน!!!!']
   let dashKiaSelectedTypes = new Set()
 
   function openDashKiaModal() {
@@ -757,9 +757,13 @@
   }
 
   function renderDashKiaChips() {
-    document.getElementById('dkia-chips').innerHTML = DASH_JOB_TYPES.map(t => `
-      <div onclick="toggleDashKiaType('${t}')" style="padding:6px 14px;border-radius:20px;border:1.5px solid ${dashKiaSelectedTypes.has(t)?'#F0691F':'#d1d5db'};background:${dashKiaSelectedTypes.has(t)?'#fff3ee':'white'};color:${dashKiaSelectedTypes.has(t)?'#F0691F':'#555'};font-size:13px;cursor:pointer;">${t}</div>
-    `).join('')
+    document.getElementById('dkia-chips').innerHTML = DASH_JOB_TYPES.map(t => {
+      const active = dashKiaSelectedTypes.has(t)
+      if (t === 'ด่วน!!!!') {
+        return `<div onclick="toggleDashKiaType('${t}')" style="padding:6px 14px;border-radius:20px;border:1.5px solid #ef4444;background:${active?'#ef4444':'#fef2f2'};color:${active?'white':'#ef4444'};font-size:13px;font-weight:bold;cursor:pointer;">${t}</div>`
+      }
+      return `<div onclick="toggleDashKiaType('${t}')" style="padding:6px 14px;border-radius:20px;border:1.5px solid ${active?'#F0691F':'#d1d5db'};background:${active?'#fff3ee':'white'};color:${active?'#F0691F':'#555'};font-size:13px;cursor:pointer;">${t}</div>`
+    }).join('')
   }
 
   function toggleDashKiaType(t) {
