@@ -127,9 +127,11 @@
       <div style="font-size:11px; color:#aaa; font-weight:normal;">Dashboard ติดตามการส่งของ</div>
     </div>
   </div>
-  <div style="display:flex;gap:8px;">
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <span id="user-email" style="color:#aaa;font-size:12px;"></span>
     <button class="refresh-btn" onclick="loadAll()" style="border-color:#F0691F; color:#F0691F; background:transparent;">🔄 รีเฟรช</button>
     <button class="refresh-btn" onclick="exportExcel()" style="border-color:#16a34a; color:#16a34a; background:transparent;">📥 Export Excel</button>
+    <button class="refresh-btn" onclick="logout()" style="border-color:#ef4444; color:#ef4444; background:transparent;">🚪 ออก</button>
   </div>
 </div>
 
@@ -297,6 +299,16 @@
 
 <script>
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+
+  // Auth guard — ต้อง login ก่อน
+  db.auth.getSession().then(({ data: { session } }) => {
+    if (!session) window.location.href = 'login.html?next=' + encodeURIComponent(location.pathname.split('/').pop())
+    else document.getElementById('user-email').textContent = session.user.email
+  })
+  async function logout() {
+    await db.auth.signOut()
+    window.location.href = 'login.html'
+  }
   const todayStr = new Date().toISOString().split('T')[0]
   let currentFilter = 'today'
   let currentMonthDate = new Date()

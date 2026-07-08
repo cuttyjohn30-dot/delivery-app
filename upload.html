@@ -60,11 +60,17 @@
 </head>
 <body>
 
-<div class="header" style="background:#1A1A1A; display:flex; align-items:center; gap:10px;">
-  <span style="color:#F0691F; font-size:20px;">■</span>
-  <div>
-    <div style="font-size:13px; letter-spacing:1px; color:#F0691F; font-weight:bold;">PRESS SYSTEMS GROUP</div>
-    <div style="font-size:11px; color:#aaa; font-weight:normal;">อัพโหลดตารางจัดรถ</div>
+<div class="header" style="background:#1A1A1A; display:flex; align-items:center; gap:10px; justify-content:space-between;">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span style="color:#F0691F; font-size:20px;">■</span>
+    <div>
+      <div style="font-size:13px; letter-spacing:1px; color:#F0691F; font-weight:bold;">PRESS SYSTEMS GROUP</div>
+      <div style="font-size:11px; color:#aaa; font-weight:normal;">อัพโหลดตารางจัดรถ</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <span id="user-email" style="color:#aaa;font-size:12px;"></span>
+    <button onclick="logout()" style="background:transparent;border:1px solid #ef4444;color:#ef4444;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;">🚪 ออก</button>
   </div>
 </div>
 
@@ -116,6 +122,15 @@
 
 <script>
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+
+  db.auth.getSession().then(({ data: { session } }) => {
+    if (!session) window.location.href = 'login.html?next=' + encodeURIComponent(location.pathname.split('/').pop())
+    else { const el = document.getElementById('user-email'); if (el) el.textContent = session.user.email }
+  })
+  async function logout() {
+    await db.auth.signOut()
+    window.location.href = 'login.html'
+  }
   const todayStr = new Date().toISOString().split('T')[0]
 
   let workbook = null
