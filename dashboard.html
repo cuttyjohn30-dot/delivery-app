@@ -176,6 +176,7 @@
             <th>ลูกค้า</th>
             <th>คนขับ</th>
             <th>ประเภท</th>
+            <th>Request</th>
             <th>ราคา</th>
             <th>สถานะ</th>
             <th>ถึง</th>
@@ -516,13 +517,14 @@
         <td><b>${d.customer}</b></td>
         <td>${d.driver_name || '<span style="color:#aaa;">ยังไม่ระบุ</span>'}</td>
         <td>${d.job_type || '-'}</td>
+        <td style="font-size:12px;color:#0a84ff;">${d.request_by || '-'}</td>
         <td>${d.price ? '฿' + Number(d.price).toLocaleString() : '-'}</td>
         <td><span class="badge ${d.status==='done' ? 'badge-done' : d.arrived_at ? 'badge-arrive' : 'badge-pending'}">${d.status==='done' ? '✅ ส่งแล้ว' : d.arrived_at ? '📍 ถึงแล้ว' : '⏳ รอ'}</span></td>
         <td style="color:#7c3aed; font-size:12px;">${d.arrived_at ? new Date(d.arrived_at).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})+' น.' : '-'}</td>
         <td style="color:#888; font-size:12px;">${d.done_at ? new Date(d.done_at).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})+' น.' : '-'}</td>
         <td style="font-size:12px; color:#555; max-width:120px;">${d.notes || '-'}</td>
       </tr>
-    `).join('') : `<tr><td colspan="9" style="text-align:center;color:#888;padding:30px;">ไม่มีข้อมูล</td></tr>`
+    `).join('') : `<tr><td colspan="10" style="text-align:center;color:#888;padding:30px;">ไม่มีข้อมูล</td></tr>`
   }
 
   async function openDriverModal(name) {
@@ -653,6 +655,7 @@
       'ลูกค้า':       d.customer,
       'คนขับ':        d.driver_name || '',
       'ประเภทงาน':   d.job_type || '',
+      'Request':      d.request_by || '',
       'ราคา':         d.price || '',
       'น้ำหนัก (kg)': d.weight || '',
       'สถานะ':        d.status === 'done' ? 'ส่งแล้ว' : 'รอ',
