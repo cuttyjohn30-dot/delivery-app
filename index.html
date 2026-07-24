@@ -478,7 +478,7 @@
     const requestBy = document.getElementById('kia-cal-request').value
     const jobType = [...kiaCalSelectedTypes].join(', ') || 'ส่งของ'
     const { error } = await db.from('deliveries').insert({
-      date, customer, driver: 'kia', driver_name: 'kia', job_type: jobType,
+      date, customer, driver: 'Transport', driver_name: 'kia', job_type: jobType,
       notes: notes || null, status: 'pending', added_by: 'driver',
       scheduled_time: scheduledTime || null,
       request_by: requestBy || null
