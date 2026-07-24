@@ -292,7 +292,8 @@
     const btn = document.getElementById('btn-upload')
     btn.disabled = true
 
-    // ลบเฉพาะ pending ของวันที่กำลัง import เท่านั้น
+    // ลบเฉพาะ pending ที่มาจากการอัปโหลด (added_by='system') ของวันที่กำลัง import
+    // — งานที่คนขับเพิ่มเอง (added_by='driver' เช่น ตาราง kia) จะไม่ถูกลบ
     // — pending วันอื่นคงไว้เป็นงานค้าง, done ทุกวันเก็บไว้เป็นประวัติ
     const importDates = [...new Set(parsedRows.map(r => r.date))]
     const { error: delErr } = await db
@@ -300,6 +301,7 @@
       .delete()
       .in('date', importDates)
       .eq('status', 'pending')
+      .eq('added_by', 'system')
 
     if (delErr) {
       showAlert('เกิดข้อผิดพลาดในการล้างข้อมูลเก่า: ' + delErr.message, 'error')
