@@ -338,6 +338,18 @@
     loadMonthly()
   }
 
+  // ดึงงานจากตารางปฏิทินของ kia (kia_schedule) แปลงให้หน้าตาเหมือนแถว deliveries
+  // เพื่อนำไปรวมในรายงาน/สถิติ/export ของ dashboard
+  async function fetchKiaSched({ eq = null, gte = null, lte = null } = {}) {
+    let q = db.from('kia_schedule').select('*')
+    if (eq)  q = q.eq('date', eq)
+    if (gte) q = q.gte('date', gte)
+    if (lte) q = q.lte('date', lte)
+    const { data } = await q
+    return (data || []).map(x => ({ ...x, driver: 'Transport', driver_name: 'kia', added_by: 'driver', _sched: true }))
+  }
+  const byDateDesc = (a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : ((a.id||0) - (b.id||0))
+
   async function loadMonthly() {
     const y = currentMonthDate.getFullYear()
     const m = currentMonthDate.getMonth()
@@ -347,12 +359,14 @@
     document.getElementById('month-title').textContent =
       new Date(y, m, 1).toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })
 
-    const [{ data: deliveries }, { data: kmData }] = await Promise.all([
+    const [{ data: rawDeliveries }, { data: kmData }, sched] = await Promise.all([
       db.from('deliveries').select('*').gte('date', firstDay).lte('date', lastDay),
-      db.from('km_log').select('*').gte('date', firstDay).lte('date', lastDay)
+      db.from('km_log').select('*').gte('date', firstDay).lte('date', lastDay),
+      fetchKiaSched({ gte: firstDay, lte: lastDay })
     ])
 
-    if (!deliveries) return
+    // รวมงานจากตารางปฏิทินของ kia เข้ากับงานหลัก
+    const deliveries = [...(rawDeliveries || []), ...sched]
 
     // --- Calendar ---
     const byDate = {}
@@ -445,8 +459,11 @@
     document.getElementById('modal-overlay').style.display = 'block'
     document.getElementById('modal-box').style.display = 'block'
 
-    const { data } = await db.from('deliveries').select('*').eq('date', dateStr).order('id')
-    if (!data) return
+    const [{ data: raw }, sched] = await Promise.all([
+      db.from('deliveries').select('*').eq('date', dateStr).order('id'),
+      fetchKiaSched({ eq: dateStr })
+    ])
+    const data = [...(raw || []), ...sched]
 
     const done = data.filter(d => d.status === 'done').length
     document.getElementById('modal-sub').textContent = `รวม ${data.length} รายการ · ส่งแล้ว ${done} · รอ ${data.length - done}`
@@ -458,7 +475,7 @@
         </tr></thead>
         <tbody>${data.map(i => `<tr>
           <td>${i.customer}</td>
-          <td>${i.driver_name || '<span style="color:#aaa;">-</span>'}</td>
+          <td>${i.driver_name ? i.driver_name + (i._sched ? ' 🗓' : '') : '<span style="color:#aaa;">-</span>'}</td>
           <td style="color:#666;">${i.job_type || '-'}</td>
           <td>${i.price ? '฿' + Number(i.price).toLocaleString() : '-'}</td>
           <td><span class="badge ${i.status==='done'?'badge-done':i.arrived_at?'badge-arrive':'badge-pending'}">${i.status==='done'?'✅ ส่งแล้ว':i.arrived_at?'📍 ถึงแล้ว':'⏳ รอ'}</span></td>
@@ -469,20 +486,24 @@
 
   async function loadAll() {
     let query = db.from('deliveries').select('*').order('date', {ascending: false}).order('id')
+    let schedFilter = {}
 
     if (currentFilter === 'today') {
       query = query.eq('date', todayStr)
+      schedFilter = { eq: todayStr }
       document.getElementById('table-title').textContent = 'รายการวันนี้'
     } else if (currentFilter === 'custom') {
       const d = document.getElementById('custom-date').value
       query = query.eq('date', d)
+      schedFilter = { eq: d }
       document.getElementById('table-title').textContent = 'รายการวันที่ ' + new Date(d).toLocaleDateString('th-TH', {day:'numeric', month:'long', year:'numeric'})
     } else {
       document.getElementById('table-title').textContent = 'ประวัติทั้งหมด'
     }
 
-    const { data, error } = await query
-    if (error || !data) return
+    const [{ data: raw, error }, sched] = await Promise.all([query, fetchKiaSched(schedFilter)])
+    if (error || !raw) return
+    const data = [...raw, ...sched].sort(byDateDesc)
     loadKmSummary()
 
     const total = data.length
@@ -515,7 +536,7 @@
       <tr>
         <td style="color:#888; white-space:nowrap;">${new Date(d.date).toLocaleDateString('th-TH',{day:'numeric',month:'short'})}</td>
         <td><b>${d.customer}</b></td>
-        <td>${d.driver_name || '<span style="color:#aaa;">ยังไม่ระบุ</span>'}</td>
+        <td>${d.driver_name ? d.driver_name + (d._sched ? ' 🗓' : '') : '<span style="color:#aaa;">ยังไม่ระบุ</span>'}</td>
         <td>${d.job_type || '-'}</td>
         <td style="font-size:12px;color:#0a84ff;">${d.request_by || '-'}</td>
         <td>${d.price ? '฿' + Number(d.price).toLocaleString() : '-'}</td>
@@ -534,14 +555,16 @@
     document.getElementById('modal-overlay').style.display = 'block'
     document.getElementById('modal-box').style.display = 'block'
 
-    const { data, error } = await db
-      .from('deliveries')
-      .select('*')
-      .eq('driver_name', name)
-      .order('date', { ascending: false })
-      .order('id')
+    const [{ data: raw, error }, sched] = await Promise.all([
+      db.from('deliveries').select('*')
+        .eq('driver_name', name)
+        .order('date', { ascending: false })
+        .order('id'),
+      name === 'kia' ? fetchKiaSched() : Promise.resolve([])
+    ])
 
-    if (error || !data) { document.getElementById('modal-body').innerHTML = 'เกิดข้อผิดพลาด'; return }
+    if (error || !raw) { document.getElementById('modal-body').innerHTML = 'เกิดข้อผิดพลาด'; return }
+    const data = [...raw, ...sched].sort(byDateDesc)
 
     const total = data.length
     const done  = data.filter(d => d.status === 'done').length
@@ -625,13 +648,16 @@
   async function exportExcel() {
     let query = db.from('deliveries').select('*').order('date', {ascending: false}).order('id')
     let filename = 'deliveries'
+    let schedFilter = {}
 
     if (currentFilter === 'today') {
       query = query.eq('date', todayStr)
+      schedFilter = { eq: todayStr }
       filename = 'deliveries_' + todayStr
     } else if (currentFilter === 'custom') {
       const d = document.getElementById('custom-date').value
       query = query.eq('date', d)
+      schedFilter = { eq: d }
       filename = 'deliveries_' + d
     } else if (currentFilter === 'month') {
       const y = currentMonthDate.getFullYear()
@@ -639,13 +665,15 @@
       const firstDay = `${y}-${String(m+1).padStart(2,'0')}-01`
       const lastDay  = `${y}-${String(m+1).padStart(2,'0')}-${new Date(y, m+1, 0).getDate()}`
       query = query.gte('date', firstDay).lte('date', lastDay)
+      schedFilter = { gte: firstDay, lte: lastDay }
       filename = `deliveries_${y}-${String(m+1).padStart(2,'0')}`
     } else {
       filename = 'deliveries_all'
     }
 
-    const { data, error } = await query
-    if (error || !data || !data.length) { alert('ไม่มีข้อมูลที่จะ Export'); return }
+    const [{ data: raw, error }, sched] = await Promise.all([query, fetchKiaSched(schedFilter)])
+    const data = [...(raw || []), ...sched].sort(byDateDesc)
+    if (error || !data.length) { alert('ไม่มีข้อมูลที่จะ Export'); return }
 
     const formatTime = iso => iso ? new Date(iso).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}) : ''
     const formatDate = d => new Date(d).toLocaleDateString('th-TH', {day:'numeric', month:'short', year:'numeric'})
@@ -662,10 +690,11 @@
       'เวลาถึง':      formatTime(d.arrived_at),
       'เวลาส่งเสร็จ': formatTime(d.done_at),
       'หมายเหตุ':     d.notes || '',
+      'ที่มา':        d._sched ? 'ปฏิทิน kia' : (d.added_by === 'driver' ? 'คนขับเพิ่มเอง' : 'อัปโหลด'),
     }))
 
     const ws = XLSX.utils.json_to_sheet(rows)
-    ws['!cols'] = [14,20,10,16,10,12,10,10,12,20].map(w => ({ wch: w }))
+    ws['!cols'] = [14,20,10,16,10,12,10,10,12,20,14].map(w => ({ wch: w }))
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Deliveries')
     XLSX.writeFile(wb, filename + '.xlsx')
