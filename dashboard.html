@@ -689,9 +689,15 @@
 
     document.getElementById('kia-month-label').textContent = MN[m] + ' ' + (y + 543)
 
-    const { data } = await db.from('deliveries').select('*')
-      .eq('driver_name', 'kia').gte('date', firstDay).lte('date', lastDay)
-    kiaData = data || []
+    // งานที่เพิ่มจากปฏิทินอยู่ในตาราง kia_schedule (แยกเดี่ยว อัปโหลด Excel แตะไม่ได้)
+    // ส่วนงานที่มอบหมายให้ kia ยังอยู่ใน deliveries — ดึงทั้งสองมารวมกัน
+    const [dl, sc] = await Promise.all([
+      db.from('deliveries').select('*')
+        .eq('driver_name', 'kia').gte('date', firstDay).lte('date', lastDay),
+      db.from('kia_schedule').select('*')
+        .gte('date', firstDay).lte('date', lastDay)
+    ])
+    kiaData = [...(dl.data || []), ...(sc.data || []).map(x => ({ ...x, _sched: true }))]
 
     const total = kiaData.length
     const done  = kiaData.filter(d => d.status === 'done').length
@@ -752,7 +758,7 @@
           <div style="flex:1;font-size:13px;">${e.scheduled_time?'<span style="color:#F0691F;font-size:11px;margin-right:4px;">🕐 '+e.scheduled_time.slice(0,5)+'</span>':''}${e.customer}${e.request_by?' <span style="color:#0a84ff;font-size:11px;margin-left:4px;">👤 '+e.request_by+'</span>':''}</div>
           <div style="font-size:12px;color:#666;">${e.job_type||'-'}</div>
           <span class="badge ${e.status==='done'?'badge-done':e.arrived_at?'badge-arrive':'badge-pending'}">${e.status==='done'?'✅ ส่งแล้ว':e.arrived_at?'📍 ถึงแล้ว':'⏳ รอ'}</span>
-          <button onclick="deleteDashKiaEvent(${e.id})" style="background:none;border:1px solid #ef444455;color:#ef4444;border-radius:6px;padding:2px 7px;font-size:12px;cursor:pointer;margin-left:4px;">🗑</button>
+          <button onclick="deleteDashKiaEvent(${e.id}, ${e._sched?1:0})" style="background:none;border:1px solid #ef444455;color:#ef4444;border-radius:6px;padding:2px 7px;font-size:12px;cursor:pointer;margin-left:4px;">🗑</button>
         </div>`).join('')
       : '<div style="color:#aaa;font-size:13px;text-align:center;padding:12px;">ไม่มีงานวันนี้</div>'
   }
@@ -804,9 +810,10 @@
     const scheduledTime = document.getElementById('dkia-time').value
     const requestBy = document.getElementById('dkia-request').value
     const jobType = [...dashKiaSelectedTypes].join(', ') || 'ส่งของ'
-    const { error } = await db.from('deliveries').insert({
-      date, customer, driver: 'Transport', driver_name: 'kia', job_type: jobType,
-      notes: notes || null, status: 'pending', added_by: 'driver',
+    // บันทึกลงตาราง kia_schedule (แยกเดี่ยว) — การอัปโหลด Excel ลบข้อมูลนี้ไม่ได้
+    const { error } = await db.from('kia_schedule').insert({
+      date, customer, job_type: jobType,
+      notes: notes || null, status: 'pending',
       scheduled_time: scheduledTime || null,
       request_by: requestBy || null
     })
@@ -818,9 +825,9 @@
     await loadKiaCalendar()
   }
 
-  async function deleteDashKiaEvent(id) {
+  async function deleteDashKiaEvent(id, isSched) {
     if (!confirm('ลบรายการนี้?')) return
-    const { error } = await db.from('deliveries').delete().eq('id', id)
+    const { error } = await db.from(isSched ? 'kia_schedule' : 'deliveries').delete().eq('id', id)
     if (error) { alert('เกิดข้อผิดพลาด: ' + error.message); return }
     await loadKiaCalendar()
   }

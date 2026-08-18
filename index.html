@@ -337,9 +337,15 @@
     const firstDay = kiaCalYear + '-' + String(kiaCalMonth+1).padStart(2,'0') + '-01'
     const lastDay  = kiaCalYear + '-' + String(kiaCalMonth+1).padStart(2,'0') + '-' +
       new Date(kiaCalYear, kiaCalMonth+1, 0).getDate()
-    const { data } = await db.from('deliveries').select('*')
-      .eq('driver_name','kia').gte('date', firstDay).lte('date', lastDay)
-    kiaCalData = data || []
+    // งานที่เพิ่มเองอยู่ในตาราง kia_schedule (แยกเดี่ยว อัปโหลด Excel แตะไม่ได้)
+    // ส่วนงานที่มอบหมายจากออฟฟิศยังอยู่ใน deliveries — ดึงทั้งสองมารวมกัน
+    const [dl, sc] = await Promise.all([
+      db.from('deliveries').select('*')
+        .eq('driver_name','kia').gte('date', firstDay).lte('date', lastDay),
+      db.from('kia_schedule').select('*')
+        .gte('date', firstDay).lte('date', lastDay)
+    ])
+    kiaCalData = [...(dl.data || []), ...(sc.data || []).map(x => ({ ...x, _sched: true }))]
     renderKiaCal()
   }
 
@@ -407,13 +413,13 @@
             <div class="tt-ev-sub">${j.job_type||'ส่งของ'}${j.request_by?' · <span style="color:#0a84ff;">👤 '+j.request_by+'</span>':''} ${j.status==='done'?'<span class="tt-badge" style="background:#1c4a2a;color:#30d158;">✓ ส่งแล้ว</span>':'<span class="tt-badge" style="background:#3a2800;color:#ffd60a;">รอส่ง</span>'}</div>
           </div>
         </div>
-        <button onclick="deleteKiaCalEvent(${j.id})" style="background:none;border:1px solid #ef444466;color:#ef4444;border-radius:6px;padding:3px 8px;font-size:13px;cursor:pointer;flex-shrink:0;margin-left:8px;">🗑</button>
+        <button onclick="deleteKiaCalEvent(${j.id}, ${j._sched?1:0})" style="background:none;border:1px solid #ef444466;color:#ef4444;border-radius:6px;padding:3px 8px;font-size:13px;cursor:pointer;flex-shrink:0;margin-left:8px;">🗑</button>
       </div>`).join('')
   }
 
-  async function deleteKiaCalEvent(id) {
+  async function deleteKiaCalEvent(id, isSched) {
     if (!confirm('ลบรายการนี้?')) return
-    const { error } = await db.from('deliveries').delete().eq('id', id)
+    const { error } = await db.from(isSched ? 'kia_schedule' : 'deliveries').delete().eq('id', id)
     if (error) { showToast('เกิดข้อผิดพลาด: ' + error.message, '#ef4444'); return }
     showToast('🗑 ลบรายการแล้ว')
     await loadKiaCalendar()
@@ -477,9 +483,10 @@
     const scheduledTime = document.getElementById('kia-cal-time').value
     const requestBy = document.getElementById('kia-cal-request').value
     const jobType = [...kiaCalSelectedTypes].join(', ') || 'ส่งของ'
-    const { error } = await db.from('deliveries').insert({
-      date, customer, driver: 'Transport', driver_name: 'kia', job_type: jobType,
-      notes: notes || null, status: 'pending', added_by: 'driver',
+    // บันทึกลงตาราง kia_schedule (แยกเดี่ยว) — การอัปโหลด Excel ลบข้อมูลนี้ไม่ได้
+    const { error } = await db.from('kia_schedule').insert({
+      date, customer, job_type: jobType,
+      notes: notes || null, status: 'pending',
       scheduled_time: scheduledTime || null,
       request_by: requestBy || null
     })
@@ -561,7 +568,15 @@
       return
     }
 
-    renderList(data, [])
+    // สำหรับ kia: รวมงานจากตารางปฏิทินส่วนตัว (kia_schedule) ของวันนี้ด้วย
+    let combined = data || []
+    if (currentDriver === 'kia') {
+      const { data: sched } = await db.from('kia_schedule').select('*')
+        .eq('date', todayStr).order('scheduled_time')
+      combined = [...combined, ...(sched || []).map(x => ({ ...x, _sched: true }))]
+    }
+
+    renderList(combined, [])
   }
 
   function renderList(today, carry) {
@@ -576,22 +591,23 @@
       const arrivedInfo = d.arrived_at ? `<div class="arrive-time">📍 ถึงแล้ว ${formatTime(d.arrived_at)}</div>` : ''
       const notesInfo = d.notes ? `<div class="notes-text">💬 ${d.notes}</div>` : ''
 
+      const sc = d._sched ? 1 : 0
       let actionBtn = ''
       if (d.status === 'done') {
         actionBtn = '<span style="font-size:22px;">✅</span>'
       } else if (d.arrived_at) {
-        actionBtn = `<button class="btn-confirm btn-done" onclick="openDoneModal(${d.id})">ส่งแล้ว ✅</button>`
+        actionBtn = `<button class="btn-confirm btn-done" onclick="openDoneModal(${d.id}, ${sc})">ส่งแล้ว ✅</button>`
       } else {
-        actionBtn = `<button class="btn-confirm btn-arrive" onclick="arriveDelivery(${d.id})">ถึงแล้ว 📍</button>`
+        actionBtn = `<button class="btn-confirm btn-arrive" onclick="arriveDelivery(${d.id}, ${sc})">ถึงแล้ว 📍</button>`
       }
 
       return `
-        <div class="delivery-item ${d.status==='done' ? 'done' : d.arrived_at ? 'arrived' : ''} ${isCarry && d.status!=='done' ? 'carry' : ''}" id="row-${d.id}">
+        <div class="delivery-item ${d.status==='done' ? 'done' : d.arrived_at ? 'arrived' : ''} ${isCarry && d.status!=='done' ? 'carry' : ''}" id="row-${d._sched?'s':''}${d.id}">
           <div style="flex:1;">
-            <div class="delivery-customer">${d.customer}</div>
+            <div class="delivery-customer">${d._sched && d.scheduled_time ? '<span style="color:#F0691F;font-size:12px;margin-right:4px;">🕐 ' + d.scheduled_time.slice(0,5) + '</span>' : ''}${d.customer}</div>
             <div class="delivery-meta">${d.job_type || '-'}</div>
             ${d.price ? `<div class="delivery-price">฿${Number(d.price).toLocaleString()}</div>` : ''}
-            ${d.added_by === 'driver' ? '<div class="delivery-added">⚡ เพิ่มเอง</div>' : ''}
+            ${d._sched ? '<div class="delivery-added">🗓 จากปฏิทิน</div>' : d.added_by === 'driver' ? '<div class="delivery-added">⚡ เพิ่มเอง</div>' : ''}
             ${carryDate}
             ${arrivedInfo}
             ${notesInfo}
@@ -599,7 +615,7 @@
           </div>
           <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
             ${actionBtn}
-            <button class="btn-delete" onclick="deleteDelivery(${d.id})" title="ลบรายการ">🗑</button>
+            <button class="btn-delete" onclick="deleteDelivery(${d.id}, ${d._sched?1:0})" title="ลบรายการ">🗑</button>
           </div>
         </div>`
     }
@@ -629,21 +645,24 @@
     document.getElementById('delivery-list').innerHTML = html
   }
 
-  async function deleteDelivery(id) {
+  async function deleteDelivery(id, isSched) {
     if (!confirm('ลบรายการนี้ออก?')) return
-    const { error } = await db.from('deliveries').delete().eq('id', id)
+    const { error } = await db.from(isSched ? 'kia_schedule' : 'deliveries').delete().eq('id', id)
     if (error) { showToast('เกิดข้อผิดพลาด: ' + error.message, '#ef4444'); return }
     showToast('🗑 ลบรายการแล้ว')
     await loadDeliveries()
   }
 
-  async function arriveDelivery(id) {
-    const btn = document.querySelector(`#row-${id} .btn-arrive`)
+  async function arriveDelivery(id, isSched) {
+    const btn = document.querySelector(`#row-${isSched?'s':''}${id} .btn-arrive`)
     if (btn) { btn.disabled = true; btn.textContent = '...' }
     const now = new Date().toISOString()
+    const payload = isSched
+      ? { arrived_at: now }
+      : { arrived_at: now, driver_name: currentDriver }
     const { error } = await db
-      .from('deliveries')
-      .update({ arrived_at: now, driver_name: currentDriver })
+      .from(isSched ? 'kia_schedule' : 'deliveries')
+      .update(payload)
       .eq('id', id)
     if (error) { showToast('เกิดข้อผิดพลาด', '#ef4444'); return }
     showToast('📍 บันทึกเวลาถึงแล้ว')
@@ -651,8 +670,10 @@
   }
 
   let pendingDoneId = null
-  function openDoneModal(id) {
+  let pendingDoneSched = 0
+  function openDoneModal(id, isSched) {
     pendingDoneId = id
+    pendingDoneSched = isSched ? 1 : 0
     document.getElementById('notes-input').value = ''
     document.getElementById('done-modal').style.display = 'block'
     document.getElementById('done-overlay').style.display = 'block'
@@ -668,12 +689,16 @@
   async function confirmDelivery(skipNotes) {
     const id = pendingDoneId
     if (!id) return
+    const isSched = pendingDoneSched
     const notes = document.getElementById('notes-input').value.trim()
     closeDoneModal()
     const now = new Date().toISOString()
+    const payload = isSched
+      ? { status: 'done', done_at: now, notes: notes || null }
+      : { status: 'done', done_at: now, driver_name: currentDriver, notes: notes || null }
     const { error } = await db
-      .from('deliveries')
-      .update({ status: 'done', done_at: now, driver_name: currentDriver, notes: notes || null })
+      .from(isSched ? 'kia_schedule' : 'deliveries')
+      .update(payload)
       .eq('id', id)
     if (error) { showToast('เกิดข้อผิดพลาด', '#ef4444'); return }
     showToast('✅ บันทึกแล้ว')
