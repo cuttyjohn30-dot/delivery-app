@@ -110,6 +110,9 @@
   .tt-ev-sub { font-size: 11px; color: #888; margin-top: 2px; }
   .tt-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; }
   .tt-fab { display: block; width: calc(100% - 32px); margin: 12px 16px 0; padding: 13px; background: #F0691F; color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; }
+  /* ปุ่มเลือกประเภทงาน (modal เพิ่มตารางงาน kia) */
+  .chip { padding: 8px 14px; border-radius: 20px; font-size: 13px; cursor: pointer; user-select: none; border: 1.5px solid #d1d5db; background: white; color: #333; transition: all .15s; }
+  .chip-active { border-color: #F0691F; background: #fff3ee; color: #F0691F; font-weight: bold; }
 </style>
 </head>
 <body>
@@ -464,7 +467,7 @@
       const style = isUrgent
         ? `background:${active?'#ef4444':'#fef2f2'};color:${active?'white':'#ef4444'};border:1.5px solid #ef4444;font-weight:bold;`
         : ''
-      return `<div class="chip ${active ? 'chip-active' : ''}" style="${style}" onclick="toggleKiaCalType('${t}')">${t}</div>`
+      return `<div class="chip ${active ? 'chip-active' : ''}" style="${style}" onclick="toggleKiaCalType('${t}')">${active ? '✓ ' : ''}${t}</div>`
     }).join('')
   }
 
