@@ -257,26 +257,26 @@
 
 <!-- Modal เพิ่มงาน kia (dashboard) -->
 <div class="modal-overlay" id="dash-kia-overlay" onclick="closeDashKiaModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;"></div>
-<div id="dash-kia-modal" style="display:none;position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;background:white;border-radius:20px 20px 0 0;padding:20px;z-index:1000;box-shadow:0 -4px 20px rgba(0,0,0,0.15);">
+<div id="dash-kia-modal" style="display:none;position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;background:white;border-radius:20px 20px 0 0;padding:20px;z-index:1000;box-shadow:0 -4px 20px rgba(0,0,0,0.15);max-height:85vh;overflow-y:auto;">
   <div style="width:36px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 16px;"></div>
   <div style="font-size:16px;font-weight:bold;margin-bottom:16px;color:#1A1A1A;">📅 เพิ่มตารางงาน kia</div>
   <label style="font-size:13px;font-weight:bold;color:#555;display:block;margin-bottom:4px;">วันที่</label>
-  <input id="dkia-date" type="date" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:12px;" />
+  <input id="dkia-date" type="date" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:16px;margin-bottom:12px;" />
   <label style="font-size:13px;font-weight:bold;color:#555;display:block;margin-bottom:4px;">ชื่อลูกค้า / งาน *</label>
-  <input id="dkia-customer" type="text" placeholder="เช่น Skanem, IS Visit" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:12px;" />
+  <input id="dkia-customer" type="text" placeholder="เช่น Skanem, IS Visit" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:16px;margin-bottom:12px;" />
   <label style="font-size:13px;font-weight:bold;color:#555;display:block;margin-bottom:4px;">ประเภทงาน</label>
   <div id="dkia-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>
   <label style="font-size:13px;font-weight:bold;color:#555;display:block;margin-bottom:4px;">เวลานัด (ถ้ามี)</label>
-  <input id="dkia-time" type="time" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:12px;" />
+  <input id="dkia-time" type="time" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:16px;margin-bottom:12px;" />
   <label style="font-size:13px;font-weight:bold;color:#555;display:block;margin-bottom:4px;">Request</label>
-  <select id="dkia-request" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:12px;background:white;">
+  <select id="dkia-request" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:16px;margin-bottom:12px;background:white;">
     <option value="">— เลือก —</option>
     <option value="internal sale">Internal Sale</option>
     <option value="sale">Sale</option>
     <option value="other">Other</option>
   </select>
   <label style="font-size:13px;font-weight:bold;color:#555;display:block;margin-bottom:4px;">หมายเหตุ</label>
-  <input id="dkia-notes" type="text" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:16px;" />
+  <input id="dkia-notes" type="text" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:16px;margin-bottom:16px;" />
   <div style="display:flex;gap:10px;">
     <button onclick="closeDashKiaModal()" style="flex:1;padding:12px;border:1px solid #d1d5db;background:white;border-radius:10px;font-size:14px;cursor:pointer;">ยกเลิก</button>
     <button onclick="saveDashKiaEvent()" style="flex:2;padding:12px;background:#F0691F;color:white;border:none;border-radius:10px;font-size:14px;font-weight:bold;cursor:pointer;">บันทึก ✅</button>

@@ -44,11 +44,12 @@
   .btn-add { width: 100%; background: #F0691F; color: white; border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: bold; cursor: pointer; margin-bottom: 80px; }
   .btn-delete { background: none; border: 1px solid #ef444455; color: #ef4444; border-radius: 8px; padding: 4px 8px; font-size: 14px; cursor: pointer; }
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 199; }
-  .modal { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 20px 20px 0 0; padding: 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.15); z-index: 200; max-width: 480px; margin: 0 auto; }
+  .modal { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 20px 20px 0 0; padding: 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.15); z-index: 200; max-width: 480px; margin: 0 auto; max-height: 85vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   .modal-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 16px; }
   .modal-title { font-weight: bold; font-size: 16px; text-align: center; margin-bottom: 16px; }
   label { font-size: 13px; color: #555; display: block; margin-bottom: 4px; }
-  input, select { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; margin-bottom: 12px; background: white; }
+  /* ช่องกรอกต้องมี font-size อย่างน้อย 16px ไม่งั้น iPhone จะซูมหน้าจอเข้าเองตอนแตะพิมพ์ */
+  input, select { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 16px; margin-bottom: 12px; background: white; }
   input:focus, select:focus { outline: none; border-color: #F0691F; }
   .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .btn-cancel { padding: 12px; border: 1px solid #d1d5db; background: white; border-radius: 8px; font-size: 14px; cursor: pointer; }
@@ -73,7 +74,7 @@
   .km-title { font-size: 14px; font-weight: bold; color: #92400e; margin-bottom: 10px; }
   .km-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
   .km-field label { font-size: 12px; color: #555; margin-bottom: 4px; display: block; }
-  .km-field input { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 15px; text-align: center; }
+  .km-field input { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 16px; text-align: center; }
   .km-summary { background: #fef3c7; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #92400e; margin-bottom: 10px; text-align: center; }
   .btn-km { width: 100%; padding: 12px; background: #f59e0b; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
   .btn-km:active { background: #d97706; }
@@ -229,7 +230,7 @@
   <label>เวลานัด (ถ้ามี)</label>
   <input id="kia-cal-time" type="time" style="margin-bottom:12px;" />
   <label>Request</label>
-  <select id="kia-cal-request" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:12px;background:white;">
+  <select id="kia-cal-request" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:16px;margin-bottom:12px;background:white;">
     <option value="">— เลือก —</option>
     <option value="internal sale">Internal Sale</option>
     <option value="sale">Sale</option>
